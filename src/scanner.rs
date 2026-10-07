@@ -1,5 +1,5 @@
-use std::iter::Peekable;
 use std::str::Chars;
+use std::{fmt::Display, iter::Peekable};
 
 use crate::token::{Literal, Token, TokenType, keyword_token_type};
 
@@ -29,6 +29,19 @@ pub enum ScanError {
     UnexpectedCharacter { line: usize, character: char },
     UnterminatedString { line: usize },
 }
+
+impl Display for ScanError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ScanError::UnexpectedCharacter { line, character } => {
+                write!(f, "[line {}] Unexpected character: {}", line, character)
+            }
+            ScanError::UnterminatedString { line } => {
+                write!(f, "[line {}] Unterminated string", line)
+            }
+        }
+    }
+}
 impl<'a> Scanner<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
@@ -43,7 +56,12 @@ impl<'a> Scanner<'a> {
         }
     }
     pub fn scan_tokens(&mut self) -> Result<(), ScanError> {
-        while self.scan_token()? {
+        loop {
+            match self.scan_token() {
+                Ok(true) => {}
+                Ok(false) => break,
+                Err(e) => eprintln!("{e}"),
+            }
             self.start = self.current;
         }
         self.tokens.push(Token::new(
