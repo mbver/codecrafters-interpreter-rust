@@ -152,8 +152,8 @@ impl<'a> Scanner<'a> {
         match ch {
             '(' => self.add_simple_token(TokenType::LEFT_PAREN),
             ')' => self.add_simple_token(TokenType::RIGHT_PAREN),
-            '{' => self.add_simple_token(TokenType::LeftBrace),
-            '}' => self.add_simple_token(TokenType::RightBrace),
+            '{' => self.add_simple_token(TokenType::LEFT_BRACE),
+            '}' => self.add_simple_token(TokenType::RIGHT_BRACE),
             ',' => self.add_simple_token(TokenType::Comma),
             '.' => self.add_simple_token(TokenType::Dot),
             '-' => self.add_simple_token(TokenType::Minus),

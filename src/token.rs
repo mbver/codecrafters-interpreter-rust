@@ -12,8 +12,8 @@ pub enum Literal {
 pub enum TokenType {
     LEFT_PAREN,
     RIGHT_PAREN,
-    LeftBrace,
-    RightBrace,
+    LEFT_BRACE,
+    RIGHT_BRACE,
     Comma,
     Dot,
     Minus,
