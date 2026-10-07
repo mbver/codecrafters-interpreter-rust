@@ -49,7 +49,7 @@ impl<'a> Scanner<'a> {
         self.tokens.push(Token::new(
             TokenType::EOF,
             "".to_string(),
-            Literal::Null,
+            Literal::NULL,
             self.line,
         ));
         Ok(())
@@ -142,7 +142,7 @@ impl<'a> Scanner<'a> {
             .push(Token::new(token_type, lexeme, literal, self.line));
     }
     fn add_simple_token(&mut self, token_type: TokenType) {
-        self.add_token(token_type, Literal::Null);
+        self.add_token(token_type, Literal::NULL);
     }
     // return false at EOF
     pub fn scan_token(&mut self) -> Result<bool, ScanError> {
@@ -150,8 +150,8 @@ impl<'a> Scanner<'a> {
             return Ok(false);
         };
         match ch {
-            '(' => self.add_simple_token(TokenType::LeftParen),
-            ')' => self.add_simple_token(TokenType::RightParen),
+            '(' => self.add_simple_token(TokenType::LEFT_PAREN),
+            ')' => self.add_simple_token(TokenType::RIGHT_PAREN),
             '{' => self.add_simple_token(TokenType::LeftBrace),
             '}' => self.add_simple_token(TokenType::RightBrace),
             ',' => self.add_simple_token(TokenType::Comma),
@@ -160,7 +160,7 @@ impl<'a> Scanner<'a> {
             '+' => self.add_simple_token(TokenType::Plus),
             ';' => self.add_simple_token(TokenType::SemiColon),
             '*' => self.add_simple_token(TokenType::Star),
-            '!' => self.match_and_add('=', TokenType::BangEqual, TokenType::Equal),
+            '!' => self.match_and_add('=', TokenType::BangEqual, TokenType::Bang),
             '=' => self.match_and_add('=', TokenType::EqualEqual, TokenType::Equal),
             '<' => self.match_and_add('=', TokenType::LessEqual, TokenType::Less),
             '>' => self.match_and_add('=', TokenType::GreaterEqual, TokenType::Greater),

@@ -5,13 +5,13 @@ pub enum Literal {
     Number(f64),
     String(String),
     Boolean(bool),
-    Null,
+    NULL,
 }
 
 #[derive(Debug, Clone)]
 pub enum TokenType {
-    LeftParen,
-    RightParen,
+    LEFT_PAREN,
+    RIGHT_PAREN,
     LeftBrace,
     RightBrace,
     Comma,
