@@ -154,16 +154,16 @@ impl<'a> Scanner<'a> {
             ')' => self.add_simple_token(TokenType::RIGHT_PAREN),
             '{' => self.add_simple_token(TokenType::LEFT_BRACE),
             '}' => self.add_simple_token(TokenType::RIGHT_BRACE),
-            ',' => self.add_simple_token(TokenType::Comma),
-            '.' => self.add_simple_token(TokenType::Dot),
-            '-' => self.add_simple_token(TokenType::Minus),
-            '+' => self.add_simple_token(TokenType::Plus),
-            ';' => self.add_simple_token(TokenType::SemiColon),
-            '*' => self.add_simple_token(TokenType::Star),
-            '!' => self.match_and_add('=', TokenType::BangEqual, TokenType::Bang),
-            '=' => self.match_and_add('=', TokenType::EqualEqual, TokenType::Equal),
-            '<' => self.match_and_add('=', TokenType::LessEqual, TokenType::Less),
-            '>' => self.match_and_add('=', TokenType::GreaterEqual, TokenType::Greater),
+            ',' => self.add_simple_token(TokenType::COMMA),
+            '.' => self.add_simple_token(TokenType::DOT),
+            '-' => self.add_simple_token(TokenType::MINUS),
+            '+' => self.add_simple_token(TokenType::PLUS),
+            ';' => self.add_simple_token(TokenType::SEMICOLON),
+            '*' => self.add_simple_token(TokenType::STAR),
+            '!' => self.match_and_add('=', TokenType::BangEqual, TokenType::BANG),
+            '=' => self.match_and_add('=', TokenType::EqualEqual, TokenType::EQUAL),
+            '<' => self.match_and_add('=', TokenType::LessEqual, TokenType::LESS),
+            '>' => self.match_and_add('=', TokenType::GreaterEqual, TokenType::GREATER),
             '/' => {
                 if self.match_char('/') {
                     while let Some(&ch) = self.reader.chars.peek()
@@ -172,7 +172,7 @@ impl<'a> Scanner<'a> {
                         self.advance();
                     }
                 } else {
-                    self.add_simple_token(TokenType::Slash);
+                    self.add_simple_token(TokenType::SLASH);
                 }
             }
             ' ' | '\r' | '\t' => {}
