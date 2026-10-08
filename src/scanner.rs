@@ -9,6 +9,7 @@ pub struct Scanner<'a> {
     start: usize,
     current: usize,
     line: usize,
+    has_error: bool,
 }
 
 struct CharReader<'a> {
@@ -53,14 +54,18 @@ impl<'a> Scanner<'a> {
             start: 0,
             current: 0,
             line: 0,
+            has_error: false,
         }
     }
-    pub fn scan_tokens(&mut self) -> Result<(), ScanError> {
+    pub fn scan_tokens(&mut self) {
         loop {
             match self.scan_token() {
                 Ok(true) => {}
                 Ok(false) => break,
-                Err(e) => eprintln!("{e}"),
+                Err(e) => {
+                    eprintln!("{e}");
+                    self.has_error = true;
+                }
             }
             self.start = self.current;
         }
@@ -70,7 +75,6 @@ impl<'a> Scanner<'a> {
             Literal::null,
             self.line,
         ));
-        Ok(())
     }
     pub fn get_tokens(&self) -> Vec<Token> {
         self.tokens.clone()
@@ -210,5 +214,8 @@ impl<'a> Scanner<'a> {
             }
         };
         Ok(true) // continue
+    }
+    pub fn has_error(&self) -> bool {
+        self.has_error
     }
 }

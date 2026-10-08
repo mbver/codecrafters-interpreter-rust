@@ -1,6 +1,7 @@
 #![allow(unused_variables)]
 use std::env;
 use std::fs;
+use std::process;
 
 use crate::scanner::Scanner;
 
@@ -27,11 +28,12 @@ fn main() {
             });
 
             let mut scanner = Scanner::new(&file_contents);
-            if let Err(e) = scanner.scan_tokens() {
-                eprintln!("scan error: {:?}", e);
-            }
+            scanner.scan_tokens();
             for token in scanner.get_tokens() {
                 println!("{}", token);
+            }
+            if scanner.has_error() {
+                process::exit(65)
             }
         }
         _ => {
