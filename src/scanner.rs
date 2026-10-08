@@ -188,8 +188,8 @@ impl<'a> Scanner<'a> {
             '*' => self.add_simple_token(TokenType::STAR),
             '!' => self.match_and_add('=', TokenType::BANG_EQUAL, TokenType::BANG),
             '=' => self.match_and_add('=', TokenType::EQUAL_EQUAL, TokenType::EQUAL),
-            '<' => self.match_and_add('=', TokenType::LessEqual, TokenType::LESS),
-            '>' => self.match_and_add('=', TokenType::GreaterEqual, TokenType::GREATER),
+            '<' => self.match_and_add('=', TokenType::LESS_EQUAL, TokenType::LESS),
+            '>' => self.match_and_add('=', TokenType::GREATER_EQUAL, TokenType::GREATER),
             '/' => {
                 if self.match_char('/') {
                     while let Some(&ch) = self.reader.chars.peek()
