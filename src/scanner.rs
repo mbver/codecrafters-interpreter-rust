@@ -53,7 +53,7 @@ impl<'a> Scanner<'a> {
             tokens: Vec::new(),
             start: 0,
             current: 0,
-            line: 0,
+            line: 1,
             has_error: false,
         }
     }
