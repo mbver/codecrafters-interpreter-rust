@@ -152,7 +152,7 @@ impl<'a> Scanner<'a> {
         let value = self.reader.source[self.start..self.current]
             .parse::<f64>()
             .unwrap(); // can't be invalide number?
-        self.add_token(TokenType::Number, Literal::Number(value));
+        self.add_token(TokenType::NUMBER, Literal::Number(value));
     }
     fn read_identifier(&mut self) {
         while self.has_next_alphanumeric() {

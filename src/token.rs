@@ -11,7 +11,13 @@ pub enum Literal {
 impl Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Number(n) => write!(f, "{}", n),
+            Self::Number(n) => {
+                if n.fract() == 0.0 {
+                    write!(f, "{n:.1}")
+                } else {
+                    write!(f, "{n}")
+                }
+            }
             Self::STRING(s) => write!(f, "{}", s),
             Self::Boolean(v) => write!(f, "{}", v),
             Self::NULL => write!(f, "null"),
@@ -41,7 +47,7 @@ pub enum TokenType {
     LESS_EQUAL,
     Identifier,
     STRING,
-    Number,
+    NUMBER,
     And,
     Class,
     Else,
