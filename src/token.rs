@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub enum Literal {
     Number(f64),
-    String(String),
+    STRING(String),
     Boolean(bool),
     null,
 }
@@ -30,7 +30,7 @@ pub enum TokenType {
     LESS,
     LESS_EQUAL,
     Identifier,
-    String,
+    STRING,
     Number,
     And,
     Class,

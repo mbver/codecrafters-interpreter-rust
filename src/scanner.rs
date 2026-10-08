@@ -118,7 +118,7 @@ impl<'a> Scanner<'a> {
         }
         self.advance(); // the closing '"'
         let value = self.reader.source[self.start + 1..self.current - 1].to_string(); // " is 1 byte in utf8 encoding
-        self.add_token(TokenType::String, Literal::String(value));
+        self.add_token(TokenType::STRING, Literal::STRING(value));
         Ok(())
     }
     fn has_next_digit(&mut self) -> bool {
