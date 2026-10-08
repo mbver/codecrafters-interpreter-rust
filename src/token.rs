@@ -22,7 +22,7 @@ pub enum TokenType {
     SLASH,
     STAR,
     BANG,
-    BangEqual,
+    BANG_EQUAL,
     EQUAL,
     EQUAL_EQUAL,
     GREATER,
