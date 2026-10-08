@@ -42,7 +42,7 @@ impl Display for ScanError {
                 )
             }
             ScanError::UnterminatedString { line } => {
-                write!(f, "[line {}] Error: Unterminated string", line)
+                write!(f, "[line {}] Error: Unterminated string.", line)
             }
         }
     }
