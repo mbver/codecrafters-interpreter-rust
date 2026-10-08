@@ -159,7 +159,7 @@ impl<'a> Scanner<'a> {
             self.advance();
         }
         let word = &self.reader.source[self.start..self.current];
-        let token_type = keyword_token_type(word).unwrap_or(TokenType::Identifier);
+        let token_type = keyword_token_type(word).unwrap_or(TokenType::IDENTIFIER);
         self.add_simple_token(token_type);
     }
     fn add_token(&mut self, token_type: TokenType, literal: Literal) {

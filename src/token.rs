@@ -45,7 +45,7 @@ pub enum TokenType {
     GREATER_EQUAL,
     LESS,
     LESS_EQUAL,
-    Identifier,
+    IDENTIFIER,
     STRING,
     NUMBER,
     And,
