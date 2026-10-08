@@ -76,7 +76,7 @@ impl<'a> Scanner<'a> {
         self.tokens.push(Token::new(
             TokenType::EOF,
             "".to_string(),
-            Literal::null,
+            Literal::NULL,
             self.line,
         ));
     }
@@ -168,7 +168,7 @@ impl<'a> Scanner<'a> {
             .push(Token::new(token_type, lexeme, literal, self.line));
     }
     fn add_simple_token(&mut self, token_type: TokenType) {
-        self.add_token(token_type, Literal::null);
+        self.add_token(token_type, Literal::NULL);
     }
     // return false at EOF
     pub fn scan_token(&mut self) -> Result<bool, ScanError> {

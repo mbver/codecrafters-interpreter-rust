@@ -1,13 +1,23 @@
-use std::fmt;
+use std::fmt::{self, Display};
 
 #[derive(Debug, Clone)]
 pub enum Literal {
     Number(f64),
     STRING(String),
     Boolean(bool),
-    null,
+    NULL,
 }
 
+impl Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Number(n) => write!(f, "{}", n),
+            Self::STRING(s) => write!(f, "{}", s),
+            Self::Boolean(v) => write!(f, "{}", v),
+            Self::NULL => write!(f, "null"),
+        }
+    }
+}
 #[derive(Debug, Clone)]
 pub enum TokenType {
     LEFT_PAREN,
@@ -94,10 +104,6 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{:?} {} {:?}",
-            self.token_type, self.lexeme, self.literal
-        )
+        write!(f, "{:?} {} {}", self.token_type, self.lexeme, self.literal)
     }
 }
