@@ -186,7 +186,7 @@ impl<'a> Scanner<'a> {
             '+' => self.add_simple_token(TokenType::PLUS),
             ';' => self.add_simple_token(TokenType::SEMICOLON),
             '*' => self.add_simple_token(TokenType::STAR),
-            '!' => self.match_and_add('=', TokenType::BangEqual, TokenType::BANG),
+            '!' => self.match_and_add('=', TokenType::BANG_EQUAL, TokenType::BANG),
             '=' => self.match_and_add('=', TokenType::EQUAL_EQUAL, TokenType::EQUAL),
             '<' => self.match_and_add('=', TokenType::LessEqual, TokenType::LESS),
             '>' => self.match_and_add('=', TokenType::GreaterEqual, TokenType::GREATER),
