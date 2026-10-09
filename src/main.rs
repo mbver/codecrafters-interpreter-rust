@@ -5,8 +5,11 @@ use std::process;
 
 use crate::scanner::Scanner;
 
+mod expr;
 mod scanner;
+mod stmt;
 mod token;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
