@@ -6,6 +6,7 @@ use std::process;
 use crate::scanner::Scanner;
 
 mod expr;
+mod printer;
 mod scanner;
 mod stmt;
 mod token;
