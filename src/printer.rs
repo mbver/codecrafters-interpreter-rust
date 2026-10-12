@@ -9,7 +9,7 @@ pub fn ast_print(expr: &Expr) -> String {
         } => parenthesize(&operator.lexeme, &[left, right]),
         Expr::Grouping { expr } => parenthesize("group", &[expr]),
         Expr::Literal { value } => match value {
-            Literal::NULL => "".to_string(),
+            Literal::NULL => "nil".to_string(),
             v => v.to_string(),
         },
         Expr::Unary { operator, right } => {

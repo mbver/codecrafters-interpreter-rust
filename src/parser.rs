@@ -19,13 +19,8 @@ impl Parser {
             has_error: false,
         }
     }
-    pub fn parse(&mut self) -> Expr {
-        match self.expression() {
-            Ok(e) => e,
-            Err(_) => Expr::Literal {
-                value: Literal::NULL,
-            },
-        }
+    pub fn parse(&mut self) -> Option<Expr> {
+        self.expression().ok()
     }
     // current() is never called beyond EOF
     fn current(&self) -> &Token {
@@ -241,7 +236,7 @@ mod tests {
         assert_eq!(tokens[0].token_type, TokenType::TRUE);
         assert_eq!(tokens[1].token_type, TokenType::EOF);
         let mut parser = Parser::new(tokens);
-        let expr = parser.parse();
+        let expr = parser.parse().unwrap();
         printer::ast_print(&expr);
         assert!(matches!(
             expr,
@@ -259,7 +254,7 @@ mod tests {
         scanner.scan_tokens();
         assert!(!scanner.has_error());
         let mut parser = Parser::new(scanner.get_tokens());
-        let expr = parser.parse();
+        let expr = parser.parse().unwrap();
         let s = printer::ast_print(&expr);
         assert_eq!(s, "(/ (* 30.0 75.0) 32.0)");
     }
@@ -270,7 +265,7 @@ mod tests {
         scanner.scan_tokens();
         assert!(!scanner.has_error());
         let mut parser = Parser::new(scanner.get_tokens());
-        let expr = parser.parse();
+        let expr = parser.parse().unwrap();
         let s = printer::ast_print(&expr);
         assert_eq!(s, "nil");
         assert!(parser.has_error);

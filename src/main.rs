@@ -55,8 +55,11 @@ fn main() {
             scanner.scan_tokens();
 
             let mut parser = Parser::new(scanner.get_tokens());
-            let expr = parser.parse();
-            println!("{}", printer::ast_print(&expr));
+            if let Some(expr) = parser.parse() {
+                println!("{}", printer::ast_print(&expr));
+            } else {
+                println!("");
+            }
             if parser.has_error {
                 process::exit(65);
             }
