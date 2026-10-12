@@ -178,6 +178,7 @@ impl Parser {
             )?;
             return Ok(Expr::Grouping { expr: Box::new(e) });
         }
+        self.error(self.current().clone(), "Expect expression");
         Err(ParseError) // TODO: a clear error message then?
     }
 
@@ -189,10 +190,16 @@ impl Parser {
         if self.check(token_type) {
             return Ok(self.advance());
         }
-        // an error() method will print the message before returning?
-        Err(ParseError) // should we add error msg into ParseError? or log it here?
+        self.error(self.current().clone(), msg);
+        Err(ParseError)
     }
-
+    fn error(&mut self, token: Token, msg: &str) {
+        self.has_error = true;
+        eprintln!(
+            "[line {}] Error at '{}': {}.",
+            token.line, token.lexeme, msg
+        );
+    }
     fn synchronize(&mut self) {
         self.advance();
         while !self.is_at_end() {
@@ -255,5 +262,17 @@ mod tests {
         let expr = parser.parse();
         let s = printer::ast_print(&expr);
         assert_eq!(s, "(/ (* 30.0 75.0) 32.0)");
+    }
+    #[test]
+    fn parse_error() {
+        let content = "(72 + )";
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let expr = parser.parse();
+        let s = printer::ast_print(&expr);
+        assert_eq!(s, "nil");
+        assert!(parser.has_error);
     }
 }

@@ -194,3 +194,7 @@ println!("{}", AstPrinter::new().print(&expression));
 [tester::#WA9] [test-1] Expected line #1 on stdout to be "(/ (* 30.0 75.0) 32.0)", got "(* 30.0 (/ 75.0 32.0))"
 [tester::#WA9] [test-1] Test failed
 ```
+
+```txt
+[line 1] Error at ')': Expect expression.
+```
