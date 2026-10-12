@@ -56,7 +56,7 @@ fn main() {
 
             let mut parser = Parser::new(scanner.get_tokens());
             let expr = parser.parse();
-            printer::ast_print(&expr);
+            println!("{}", printer::ast_print(&expr));
         }
         _ => {
             eprintln!("Unknown command: {}", command);

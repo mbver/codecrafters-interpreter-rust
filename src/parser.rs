@@ -243,6 +243,6 @@ mod tests {
             }
         ));
         let s = printer::ast_print(&expr);
-        println!("============ s: {s}");
+        assert_eq!(s, "true");
     }
 }
