@@ -127,7 +127,7 @@ impl Parser {
         if let Some(operator) =
             self.match_token(&[TokenType::BANG, TokenType::MINUS])
         {
-            let right = self.primary()?;
+            let right = self.unary()?;
             return Ok(Expr::Unary {
                 operator,
                 right: Box::new(right),
