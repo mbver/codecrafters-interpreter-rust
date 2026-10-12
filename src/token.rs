@@ -24,7 +24,7 @@ impl Display for Literal {
         }
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     LEFT_PAREN,
     RIGHT_PAREN,
@@ -98,7 +98,12 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, literal: Literal, line: usize) -> Self {
+    pub fn new(
+        token_type: TokenType,
+        lexeme: String,
+        literal: Literal,
+        line: usize,
+    ) -> Self {
         Self {
             token_type,
             lexeme,

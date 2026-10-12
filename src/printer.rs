@@ -1,6 +1,6 @@
 use crate::{expr::Expr, token::Literal};
 
-fn ast_print(expr: &Expr) -> String {
+pub fn ast_print(expr: &Expr) -> String {
     match expr {
         Expr::Binary {
             left,
