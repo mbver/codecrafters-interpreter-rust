@@ -98,7 +98,7 @@ impl Parser {
         while let Some(operator) =
             self.match_token(&[TokenType::PLUS, TokenType::MINUS])
         {
-            let right = self.expression()?;
+            let right = self.factor()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
@@ -113,7 +113,7 @@ impl Parser {
         while let Some(operator) =
             self.match_token(&[TokenType::SLASH, TokenType::STAR])
         {
-            let right = self.expression()?;
+            let right = self.unary()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
@@ -127,7 +127,7 @@ impl Parser {
         if let Some(operator) =
             self.match_token(&[TokenType::BANG, TokenType::MINUS])
         {
-            let right = self.expression()?;
+            let right = self.primary()?;
             return Ok(Expr::Unary {
                 operator,
                 right: Box::new(right),
@@ -244,5 +244,16 @@ mod tests {
         ));
         let s = printer::ast_print(&expr);
         assert_eq!(s, "true");
+    }
+    #[test]
+    fn parse_multiply_divide() {
+        let content = "30 * 75 / 32";
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let expr = parser.parse();
+        let s = printer::ast_print(&expr);
+        assert_eq!(s, "(/ (* 30.0 75.0) 32.0)");
     }
 }
