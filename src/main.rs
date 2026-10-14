@@ -70,7 +70,7 @@ fn main() {
                 process::exit(70);
             }
         }
-        "evaluate" => {
+        "parse" => {
             let file_contents =
                 fs::read_to_string(filename).unwrap_or_else(|_| {
                     eprintln!("Failed to read file {}", filename);
@@ -88,6 +88,30 @@ fn main() {
             }
             if parser.has_error {
                 process::exit(65);
+            }
+        }
+        "evaluate" => {
+            let file_contents =
+                fs::read_to_string(filename).unwrap_or_else(|_| {
+                    eprintln!("Failed to read file {}", filename);
+                    String::new()
+                });
+
+            let mut scanner = Scanner::new(&file_contents);
+            scanner.scan_tokens();
+
+            let mut parser = Parser::new(scanner.get_tokens());
+            let Some(expr) = parser.parse() else {
+                eprintln!("No expression to evaluate");
+                return;
+            };
+            if parser.has_error {
+                process::exit(65);
+            }
+            let mut interpreter = Interpreter::new();
+            interpreter.interpret(&expr);
+            if interpreter.has_error {
+                process::exit(70);
             }
         }
         _ => {
