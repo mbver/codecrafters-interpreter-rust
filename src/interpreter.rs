@@ -120,10 +120,7 @@ impl Interpreter {
     }
     pub fn interpret(&mut self, expr: &Expr) {
         match self.evaluate(&expr) {
-            Ok(value) => match value {
-                Literal::NULL => println!("nil"),
-                _ => println!("{}", value),
-            },
+            Ok(value) => print_value(&value),
             Err(e) => {
                 eprintln!("{}\n[line {}]", e.msg, e.token.line);
                 self.has_error = true;
@@ -137,5 +134,19 @@ fn is_truthy(value: &Literal) -> bool {
         Literal::NULL => false,
         Literal::Boolean(v) => *v,
         _ => true,
+    }
+}
+
+fn print_value(value: &Literal) {
+    match value {
+        Literal::NULL => println!("nil"),
+        Literal::Number(v) => {
+            let mut text = v.to_string();
+            if text.ends_with(".0") {
+                text.truncate(text.len() - 2);
+            }
+            println!("{}", text);
+        }
+        _ => println!("{}", value),
     }
 }
