@@ -120,7 +120,10 @@ impl Interpreter {
     }
     pub fn interpret(&mut self, expr: &Expr) {
         match self.evaluate(&expr) {
-            Ok(value) => println!("{}", value),
+            Ok(value) => match value {
+                Literal::NULL => println!("nil"),
+                _ => println!("{}", value),
+            },
             Err(e) => {
                 eprintln!("{}\n[line {}]", e.msg, e.token.line);
                 self.has_error = true;
