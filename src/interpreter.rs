@@ -42,7 +42,7 @@ impl Interpreter {
                         };
                         Ok(Literal::Number(-v))
                     }
-                    TokenType::BANG => Ok(Literal::Boolean(is_truthy(&right))),
+                    TokenType::BANG => Ok(Literal::Boolean(!is_truthy(&right))),
                     _ => unreachable!(),
                 }
             }
