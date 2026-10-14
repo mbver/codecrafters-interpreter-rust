@@ -20,7 +20,7 @@ impl Display for Literal {
             }
             Self::STRING(s) => write!(f, "{}", s),
             Self::Boolean(v) => write!(f, "{}", v),
-            Self::NULL => write!(f, "null"),
+            Self::NULL => write!(f, "nil"),
         }
     }
 }
