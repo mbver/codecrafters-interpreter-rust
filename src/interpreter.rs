@@ -118,7 +118,7 @@ impl Interpreter {
             _ => todo!(),
         }
     }
-    pub fn interpret(&mut self, expr: Expr) {
+    pub fn interpret(&mut self, expr: &Expr) {
         match self.evaluate(&expr) {
             Ok(value) => println!("{}", value),
             Err(e) => {
