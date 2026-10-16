@@ -89,8 +89,12 @@ fn main() {
             }
             let expr = expr.unwrap();
             let mut interpreter = Interpreter::new();
-            if let Ok(value) = interpreter.evaluate(&expr) {
-                print_value(&value);
+            match interpreter.evaluate(&expr) {
+                Ok(value) => print_value(&value),
+                Err(e) => {
+                    eprintln!("{}\n[line {}]", e.msg, e.token.line);
+                    interpreter.has_error = true;
+                }
             }
             if interpreter.has_error {
                 process::exit(70);
