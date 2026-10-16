@@ -27,6 +27,16 @@ impl Parser {
     pub fn parse(&mut self) -> Vec<Stmt> {
         let mut statements = Vec::new();
         while !self.is_at_end() {
+            let stmt = self.declaration();
+            if let Some(stmt) = stmt {
+                statements.push(stmt);
+            }
+        }
+        statements
+    }
+    pub fn parse_stmt(&mut self) -> Vec<Stmt> {
+        let mut statements = Vec::new();
+        while !self.is_at_end() {
             let stmt = self.statement();
             let Ok(stmt) = stmt else {
                 return statements;
@@ -66,6 +76,36 @@ impl Parser {
             }
         }
         None
+    }
+    fn declaration(&mut self) -> Option<Stmt> {
+        let result = if self.match_token(&[TokenType::VAR]).is_some() {
+            self.var_declaration()
+        } else {
+            self.statement()
+        };
+        match result {
+            Ok(stmt) => Some(stmt),
+            Err(_) => {
+                self.synchronize();
+                None
+            }
+        }
+    }
+    fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let name =
+            self.consume(TokenType::IDENTIFIER, "Expect variable name")?;
+        let initializer = if self.match_token(&[TokenType::EQUAL]).is_some() {
+            self.expression()?
+        } else {
+            Expr::Literal {
+                value: Literal::NULL,
+            }
+        };
+        self.consume(
+            TokenType::SEMICOLON,
+            "Expect ';' after variable declaration.",
+        )?;
+        Ok(Stmt::Variable { name, initializer })
     }
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.match_token(&[TokenType::PRINT]).is_some() {
@@ -195,7 +235,9 @@ impl Parser {
                 _ => unreachable!(),
             }
         }
-
+        if let Some(name) = self.match_token(&[TokenType::IDENTIFIER]) {
+            return Ok(Expr::Variable { name });
+        }
         if self.match_token(&[TokenType::LEFT_PAREN]).is_some() {
             let e = self.expression()?;
             self.consume(
