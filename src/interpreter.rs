@@ -1,5 +1,6 @@
 use crate::{
     expr::Expr,
+    stmt::Stmt,
     token::{Literal, Token, TokenType},
 };
 
@@ -8,8 +9,8 @@ pub struct Interpreter {
 }
 
 pub struct RuntimeError {
-    token: Token,
-    msg: String,
+    pub token: Token,
+    pub msg: String,
 }
 
 impl RuntimeError {
@@ -118,12 +119,26 @@ impl Interpreter {
             _ => todo!(),
         }
     }
-    pub fn interpret(&mut self, expr: &Expr) {
-        match self.evaluate(&expr) {
-            Ok(value) => print_value(&value),
-            Err(e) => {
+    fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+        match stmt {
+            Stmt::Expression(expr) => {
+                self.evaluate(expr)?;
+                Ok(())
+            }
+            Stmt::Print(expr) => {
+                let value = self.evaluate(expr)?;
+                print_value(&value);
+                Ok(())
+            }
+            _ => todo!(),
+        }
+    }
+    pub fn interpret(&mut self, stmts: &[Stmt]) {
+        for stmt in stmts {
+            if let Err(e) = self.execute(stmt) {
                 eprintln!("{}\n[line {}]", e.msg, e.token.line);
                 self.has_error = true;
+                break;
             }
         }
     }
@@ -137,7 +152,7 @@ fn is_truthy(value: &Literal) -> bool {
     }
 }
 
-fn print_value(value: &Literal) {
+pub fn print_value(value: &Literal) {
     match value {
         Literal::NULL => println!("nil"),
         Literal::Number(v) => {

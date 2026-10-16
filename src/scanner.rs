@@ -95,7 +95,12 @@ impl<'a> Scanner<'a> {
         }
         false
     }
-    fn match_and_add(&mut self, expected: char, matched: TokenType, unmatched: TokenType) {
+    fn match_and_add(
+        &mut self,
+        expected: char,
+        matched: TokenType,
+        unmatched: TokenType,
+    ) {
         let token_type = if self.match_char(expected) {
             matched
         } else {
@@ -113,11 +118,16 @@ impl<'a> Scanner<'a> {
                     }
                     self.advance();
                 }
-                None => return Err(ScanError::UnterminatedString { line: self.line }),
+                None => {
+                    return Err(ScanError::UnterminatedString {
+                        line: self.line,
+                    });
+                }
             }
         }
         self.advance(); // the closing '"'
-        let value = self.reader.source[self.start + 1..self.current - 1].to_string(); // " is 1 byte in utf8 encoding
+        let value =
+            self.reader.source[self.start + 1..self.current - 1].to_string(); // " is 1 byte in utf8 encoding
         self.add_token(TokenType::STRING, Literal::STRING(value));
         Ok(())
     }
@@ -159,7 +169,8 @@ impl<'a> Scanner<'a> {
             self.advance();
         }
         let word = &self.reader.source[self.start..self.current];
-        let token_type = keyword_token_type(word).unwrap_or(TokenType::IDENTIFIER);
+        let token_type =
+            keyword_token_type(word).unwrap_or(TokenType::IDENTIFIER);
         self.add_simple_token(token_type);
     }
     fn add_token(&mut self, token_type: TokenType, literal: Literal) {
@@ -186,10 +197,22 @@ impl<'a> Scanner<'a> {
             '+' => self.add_simple_token(TokenType::PLUS),
             ';' => self.add_simple_token(TokenType::SEMICOLON),
             '*' => self.add_simple_token(TokenType::STAR),
-            '!' => self.match_and_add('=', TokenType::BANG_EQUAL, TokenType::BANG),
-            '=' => self.match_and_add('=', TokenType::EQUAL_EQUAL, TokenType::EQUAL),
-            '<' => self.match_and_add('=', TokenType::LESS_EQUAL, TokenType::LESS),
-            '>' => self.match_and_add('=', TokenType::GREATER_EQUAL, TokenType::GREATER),
+            '!' => {
+                self.match_and_add('=', TokenType::BANG_EQUAL, TokenType::BANG)
+            }
+            '=' => self.match_and_add(
+                '=',
+                TokenType::EQUAL_EQUAL,
+                TokenType::EQUAL,
+            ),
+            '<' => {
+                self.match_and_add('=', TokenType::LESS_EQUAL, TokenType::LESS)
+            }
+            '>' => self.match_and_add(
+                '=',
+                TokenType::GREATER_EQUAL,
+                TokenType::GREATER,
+            ),
             '/' => {
                 if self.match_char('/') {
                     while let Some(&ch) = self.reader.chars.peek()
@@ -209,7 +232,9 @@ impl<'a> Scanner<'a> {
             ch if ch.is_ascii_digit() => {
                 self.read_number();
             }
-            ch if ch.is_ascii_alphabetic() || ch == '_' => self.read_identifier(),
+            ch if ch.is_ascii_alphabetic() || ch == '_' => {
+                self.read_identifier()
+            }
             ch => {
                 return Err(ScanError::UnexpectedCharacter {
                     line: self.line,

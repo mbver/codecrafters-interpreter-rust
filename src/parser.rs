@@ -1,5 +1,6 @@
 use crate::{
     expr::Expr,
+    stmt::Stmt,
     token::{Literal, Token, TokenType},
 };
 
@@ -19,8 +20,15 @@ impl Parser {
             has_error: false,
         }
     }
-    pub fn parse(&mut self) -> Option<Expr> {
-        self.expression().ok()
+    // TODO: is Option needed? and how error is handled?
+    // TODO: what happens when error occurs in the middle?
+    // do we recover now?
+    pub fn parse(&mut self) -> Option<Vec<Stmt>> {
+        let mut statements = Vec::new();
+        while !self.is_at_end() {
+            statements.push(self.statement().ok()?);
+        }
+        Some(statements)
     }
     // current() is never called beyond EOF
     fn current(&self) -> &Token {
@@ -51,10 +59,25 @@ impl Parser {
         }
         None
     }
+    fn statement(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_token(&[TokenType::PRINT]).is_some() {
+            return self.print_statement();
+        }
+        self.expression_statement()
+    }
+    fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
+        let expr = self.expression()?;
+        self.consume(TokenType::SEMICOLON, "Expect ';' after expression.")?;
+        Ok(Stmt::Expression(expr))
+    }
+    fn print_statement(&mut self) -> Result<Stmt, ParseError> {
+        let value = self.expression()?;
+        self.consume(TokenType::SEMICOLON, "Expect ';' afer value.")?;
+        Ok(Stmt::Print(value))
+    }
     fn expression(&mut self) -> Result<Expr, ParseError> {
         self.equality()
     }
-
     fn equality(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.comparison()?;
         while let Some(operator) =
@@ -236,7 +259,11 @@ mod tests {
         assert_eq!(tokens[0].token_type, TokenType::TRUE);
         assert_eq!(tokens[1].token_type, TokenType::EOF);
         let mut parser = Parser::new(tokens);
-        let expr = parser.parse().unwrap();
+        let stmts = parser.parse().unwrap();
+        assert_eq!(stmts.len(), 1);
+        let Stmt::Expression(expr) = &stmts[0] else {
+            panic!("expect expression statement")
+        };
         printer::ast_print(&expr);
         assert!(matches!(
             expr,
@@ -254,7 +281,11 @@ mod tests {
         scanner.scan_tokens();
         assert!(!scanner.has_error());
         let mut parser = Parser::new(scanner.get_tokens());
-        let expr = parser.parse().unwrap();
+        let stmts = parser.parse().unwrap();
+        assert_eq!(stmts.len(), 1);
+        let Stmt::Expression(expr) = &stmts[0] else {
+            panic!("expect expression statement")
+        };
         let s = printer::ast_print(&expr);
         assert_eq!(s, "(/ (* 30.0 75.0) 32.0)");
     }
@@ -265,7 +296,11 @@ mod tests {
         scanner.scan_tokens();
         assert!(!scanner.has_error());
         let mut parser = Parser::new(scanner.get_tokens());
-        let expr = parser.parse().unwrap();
+        let stmts = parser.parse().unwrap();
+        assert_eq!(stmts.len(), 1);
+        let Stmt::Expression(expr) = &stmts[0] else {
+            panic!("expect expression");
+        };
         let s = printer::ast_print(&expr);
         assert_eq!(s, "nil");
         assert!(parser.has_error);

@@ -4,8 +4,10 @@ use std::fs;
 use std::process;
 
 use crate::interpreter::Interpreter;
+use crate::interpreter::print_value;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
+use crate::stmt::Stmt;
 
 mod expr;
 mod interpreter;
@@ -57,8 +59,12 @@ fn main() {
             scanner.scan_tokens();
 
             let mut parser = Parser::new(scanner.get_tokens());
-            if let Some(expr) = parser.parse() {
-                println!("{}", printer::ast_print(&expr));
+            if let Some(stmts) = parser.parse() {
+                for stmt in stmts {
+                    if let Stmt::Expression(expr) = stmt {
+                        println!("{}", printer::ast_print(&expr));
+                    }
+                }
             } else {
                 println!("");
             }
@@ -79,7 +85,7 @@ fn main() {
                 process::exit(65)
             }
             let mut parser = Parser::new(scanner.get_tokens());
-            let Some(expr) = parser.parse() else {
+            let Some(stmts) = parser.parse() else {
                 eprintln!("No expression to evaluate");
                 return;
             };
@@ -87,7 +93,44 @@ fn main() {
                 process::exit(65);
             }
             let mut interpreter = Interpreter::new();
-            interpreter.interpret(&expr);
+            for stmt in stmts {
+                if let Stmt::Expression(expr) = stmt {
+                    match interpreter.evaluate(&expr) {
+                        Ok(value) => print_value(&value),
+                        Err(e) => {
+                            eprintln!("{}\n[line {}]", e.msg, e.token.line);
+                            interpreter.has_error = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if interpreter.has_error {
+                process::exit(70);
+            }
+        }
+        "run" => {
+            let file_contents =
+                fs::read_to_string(filename).unwrap_or_else(|_| {
+                    eprintln!("Failed to read file {}", filename);
+                    String::new()
+                });
+
+            let mut scanner = Scanner::new(&file_contents);
+            scanner.scan_tokens();
+            if scanner.has_error() {
+                process::exit(65)
+            }
+            let mut parser = Parser::new(scanner.get_tokens());
+            let Some(stmts) = parser.parse() else {
+                eprintln!("No expression to evaluate");
+                return;
+            };
+            if parser.has_error {
+                process::exit(65);
+            }
+            let mut interpreter = Interpreter::new();
+            interpreter.interpret(&stmts);
             if interpreter.has_error {
                 process::exit(70);
             }
