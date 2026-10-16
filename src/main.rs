@@ -59,15 +59,13 @@ fn main() {
             scanner.scan_tokens();
 
             let mut parser = Parser::new(scanner.get_tokens());
-            if let Some(stmts) = parser.parse() {
-                for stmt in stmts {
-                    if let Stmt::Expression(expr) = stmt {
-                        println!("{}", printer::ast_print(&expr));
-                    }
+            let stmts = parser.parse();
+            for stmt in stmts {
+                if let Stmt::Expression(expr) = stmt {
+                    println!("{}", printer::ast_print(&expr));
                 }
-            } else {
-                println!("");
             }
+
             if parser.has_error {
                 process::exit(65);
             }
@@ -85,10 +83,7 @@ fn main() {
                 process::exit(65)
             }
             let mut parser = Parser::new(scanner.get_tokens());
-            let Some(stmts) = parser.parse() else {
-                eprintln!("No expression to evaluate");
-                return;
-            };
+            let stmts = parser.parse();
             if parser.has_error {
                 process::exit(65);
             }
@@ -122,10 +117,7 @@ fn main() {
                 process::exit(65)
             }
             let mut parser = Parser::new(scanner.get_tokens());
-            let Some(stmts) = parser.parse() else {
-                eprintln!("No expression to evaluate");
-                return;
-            };
+            let stmts = parser.parse();
             if parser.has_error {
                 process::exit(65);
             }

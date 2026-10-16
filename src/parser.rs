@@ -23,12 +23,16 @@ impl Parser {
     // TODO: is Option needed? and how error is handled?
     // TODO: what happens when error occurs in the middle?
     // do we recover now?
-    pub fn parse(&mut self) -> Option<Vec<Stmt>> {
+    pub fn parse(&mut self) -> Vec<Stmt> {
         let mut statements = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.statement().ok()?);
+            let stmt = self.statement();
+            let Ok(stmt) = stmt else {
+                return statements;
+            };
+            statements.push(stmt);
         }
-        Some(statements)
+        statements
     }
     // current() is never called beyond EOF
     fn current(&self) -> &Token {
@@ -259,7 +263,7 @@ mod tests {
         assert_eq!(tokens[0].token_type, TokenType::TRUE);
         assert_eq!(tokens[1].token_type, TokenType::EOF);
         let mut parser = Parser::new(tokens);
-        let stmts = parser.parse().unwrap();
+        let stmts = parser.parse();
         assert_eq!(stmts.len(), 1);
         let Stmt::Expression(expr) = &stmts[0] else {
             panic!("expect expression statement")
@@ -281,7 +285,7 @@ mod tests {
         scanner.scan_tokens();
         assert!(!scanner.has_error());
         let mut parser = Parser::new(scanner.get_tokens());
-        let stmts = parser.parse().unwrap();
+        let stmts = parser.parse();
         assert_eq!(stmts.len(), 1);
         let Stmt::Expression(expr) = &stmts[0] else {
             panic!("expect expression statement")
@@ -296,7 +300,7 @@ mod tests {
         scanner.scan_tokens();
         assert!(!scanner.has_error());
         let mut parser = Parser::new(scanner.get_tokens());
-        let stmts = parser.parse().unwrap();
+        let stmts = parser.parse();
         assert_eq!(stmts.len(), 1);
         let Stmt::Expression(expr) = &stmts[0] else {
             panic!("expect expression");
