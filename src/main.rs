@@ -59,16 +59,11 @@ fn main() {
             scanner.scan_tokens();
 
             let mut parser = Parser::new(scanner.get_tokens());
-            let stmts = parser.parse();
-            for stmt in stmts {
-                if let Stmt::Expression(expr) = stmt {
-                    println!("{}", printer::ast_print(&expr));
-                }
-            }
-
+            let expr = parser.parse_expr();
             if parser.has_error {
                 process::exit(65);
             }
+            println!("{}", printer::ast_print(&expr.unwrap()));
         }
         "evaluate" => {
             let file_contents =
