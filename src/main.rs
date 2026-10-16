@@ -83,22 +83,14 @@ fn main() {
                 process::exit(65)
             }
             let mut parser = Parser::new(scanner.get_tokens());
-            let stmts = parser.parse();
+            let expr = parser.parse_expr();
             if parser.has_error {
                 process::exit(65);
             }
+            let expr = expr.unwrap();
             let mut interpreter = Interpreter::new();
-            for stmt in stmts {
-                if let Stmt::Expression(expr) = stmt {
-                    match interpreter.evaluate(&expr) {
-                        Ok(value) => print_value(&value),
-                        Err(e) => {
-                            eprintln!("{}\n[line {}]", e.msg, e.token.line);
-                            interpreter.has_error = true;
-                            break;
-                        }
-                    }
-                }
+            if let Ok(value) = interpreter.evaluate(&expr) {
+                print_value(&value);
             }
             if interpreter.has_error {
                 process::exit(70);

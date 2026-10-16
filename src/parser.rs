@@ -10,6 +10,7 @@ pub struct Parser {
     pub has_error: bool,
 }
 
+#[derive(Debug)]
 pub struct ParseError;
 
 impl Parser {
@@ -33,6 +34,9 @@ impl Parser {
             statements.push(stmt);
         }
         statements
+    }
+    pub fn parse_expr(&mut self) -> Result<Expr, ParseError> {
+        self.expression()
     }
     // current() is never called beyond EOF
     fn current(&self) -> &Token {
@@ -263,11 +267,7 @@ mod tests {
         assert_eq!(tokens[0].token_type, TokenType::TRUE);
         assert_eq!(tokens[1].token_type, TokenType::EOF);
         let mut parser = Parser::new(tokens);
-        let stmts = parser.parse();
-        assert_eq!(stmts.len(), 1);
-        let Stmt::Expression(expr) = &stmts[0] else {
-            panic!("expect expression statement")
-        };
+        let expr = parser.parse_expr().unwrap();
         printer::ast_print(&expr);
         assert!(matches!(
             expr,
@@ -285,11 +285,7 @@ mod tests {
         scanner.scan_tokens();
         assert!(!scanner.has_error());
         let mut parser = Parser::new(scanner.get_tokens());
-        let stmts = parser.parse();
-        assert_eq!(stmts.len(), 1);
-        let Stmt::Expression(expr) = &stmts[0] else {
-            panic!("expect expression statement")
-        };
+        let expr = parser.parse_expr().unwrap();
         let s = printer::ast_print(&expr);
         assert_eq!(s, "(/ (* 30.0 75.0) 32.0)");
     }
@@ -300,13 +296,8 @@ mod tests {
         scanner.scan_tokens();
         assert!(!scanner.has_error());
         let mut parser = Parser::new(scanner.get_tokens());
-        let stmts = parser.parse();
-        assert_eq!(stmts.len(), 1);
-        let Stmt::Expression(expr) = &stmts[0] else {
-            panic!("expect expression");
-        };
-        let s = printer::ast_print(&expr);
-        assert_eq!(s, "nil");
+        let expr = parser.parse_expr();
+        assert!(expr.is_err());
         assert!(parser.has_error);
     }
 }
