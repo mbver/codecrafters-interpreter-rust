@@ -145,12 +145,6 @@ impl Interpreter {
                     Rc::new(RefCell::new(enclosed)),
                 );
                 let result = stmts.iter().try_for_each(|s| self.execute(s));
-                let result = (|| {
-                    for stmt in stmts {
-                        self.execute(stmt)?;
-                    }
-                    Ok(())
-                })();
                 result
             }
             _ => todo!(),
