@@ -145,6 +145,7 @@ impl Interpreter {
                     Rc::new(RefCell::new(enclosed)),
                 );
                 let result = stmts.iter().try_for_each(|s| self.execute(s));
+                self.environment = previous;
                 result
             }
             _ => todo!(),
