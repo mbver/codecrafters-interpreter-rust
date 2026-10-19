@@ -124,7 +124,22 @@ impl Parser {
         Ok(Stmt::Print(value))
     }
     fn expression(&mut self) -> Result<Expr, ParseError> {
-        self.equality()
+        self.assignment()
+    }
+    fn assignment(&mut self) -> Result<Expr, ParseError> {
+        let expr = self.equality()?;
+        let Some(equal) = self.match_token(&[TokenType::EQUAL]) else {
+            return Ok(expr);
+        };
+        let Expr::Variable { name } = expr else {
+            self.error(equal, "Invalid assignment target.");
+            return Err(ParseError);
+        };
+        let value = self.assignment()?;
+        Ok(Expr::Assign {
+            name,
+            value: Box::new(value),
+        })
     }
     fn equality(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.comparison()?;
@@ -341,5 +356,15 @@ mod tests {
         let expr = parser.parse_expr();
         assert!(expr.is_err());
         assert!(parser.has_error);
+    }
+    #[test]
+    fn parse_assign() {
+        let content = "var baz; baz=1; print baz; print baz = 2; print baz;";
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
     }
 }
