@@ -118,7 +118,7 @@ impl Parser {
     }
     fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
         let mut stmts = Vec::new();
-        while !self.check(TokenType::RIGHT_BRACE) && self.is_at_end() {
+        while !self.check(TokenType::RIGHT_BRACE) && !self.is_at_end() {
             if let Some(stmt) = self.declaration() {
                 stmts.push(stmt);
             }
