@@ -1,30 +1,22 @@
 use crate::{
+    environment::Environment,
     expr::Expr,
+    runtime_error::RuntimeError,
     stmt::Stmt,
     token::{Literal, Token, TokenType},
 };
 
 pub struct Interpreter {
     pub has_error: bool,
-}
-
-pub struct RuntimeError {
-    pub token: Token,
-    pub msg: String,
-}
-
-impl RuntimeError {
-    fn new(token: Token, msg: &str) -> Self {
-        Self {
-            token,
-            msg: msg.to_string(),
-        }
-    }
+    environment: Environment,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self { has_error: false }
+        Self {
+            has_error: false,
+            environment: Environment::new(),
+        }
     }
     pub fn evaluate(&mut self, expr: &Expr) -> Result<Literal, RuntimeError> {
         match expr {
@@ -116,6 +108,12 @@ impl Interpreter {
                     }
                 }
             }
+            Expr::Variable { name } => self.environment.get(name),
+            Expr::Assign { name, value } => {
+                let value = self.evaluate(value)?;
+                self.environment.assign(name, value.clone())?;
+                Ok(value)
+            }
             _ => todo!(),
         }
     }
@@ -128,6 +126,11 @@ impl Interpreter {
             Stmt::Print(expr) => {
                 let value = self.evaluate(expr)?;
                 print_value(&value);
+                Ok(())
+            }
+            Stmt::Variable { name, initializer } => {
+                let value = self.evaluate(initializer)?;
+                self.environment.define(name.lexeme.clone(), value);
                 Ok(())
             }
             _ => todo!(),

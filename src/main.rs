@@ -9,10 +9,12 @@ use crate::parser::Parser;
 use crate::scanner::Scanner;
 use crate::stmt::Stmt;
 
+mod environment;
 mod expr;
 mod interpreter;
 mod parser;
 mod printer;
+mod runtime_error;
 mod scanner;
 mod stmt;
 mod token;
