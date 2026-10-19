@@ -111,7 +111,20 @@ impl Parser {
         if self.match_token(&[TokenType::PRINT]).is_some() {
             return self.print_statement();
         }
+        if self.match_token(&[TokenType::LEFT_BRACE]).is_some() {
+            return Ok(Stmt::Block(self.block()?));
+        }
         self.expression_statement()
+    }
+    fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
+        let mut stmts = Vec::new();
+        while !self.check(TokenType::RIGHT_BRACE) && self.is_at_end() {
+            if let Some(stmt) = self.declaration() {
+                stmts.push(stmt);
+            }
+        }
+        self.consume(TokenType::RIGHT_BRACE, "Expect '}' after block.")?;
+        Ok(stmts)
     }
     fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
         let expr = self.expression()?;

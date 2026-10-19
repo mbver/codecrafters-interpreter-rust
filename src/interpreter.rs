@@ -1,5 +1,7 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
-    environment::Environment,
+    environment::{EnvRef, Environment},
     expr::Expr,
     runtime_error::RuntimeError,
     stmt::Stmt,
@@ -8,14 +10,14 @@ use crate::{
 
 pub struct Interpreter {
     pub has_error: bool,
-    environment: Environment,
+    environment: EnvRef,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
         Self {
             has_error: false,
-            environment: Environment::new(),
+            environment: Rc::new(RefCell::new(Environment::new())),
         }
     }
     pub fn evaluate(&mut self, expr: &Expr) -> Result<Literal, RuntimeError> {
@@ -108,10 +110,10 @@ impl Interpreter {
                     }
                 }
             }
-            Expr::Variable { name } => self.environment.get(name),
+            Expr::Variable { name } => self.environment.borrow().get(name),
             Expr::Assign { name, value } => {
                 let value = self.evaluate(value)?;
-                self.environment.assign(name, value.clone())?;
+                self.environment.borrow_mut().assign(name, value.clone())?;
                 Ok(value)
             }
             _ => todo!(),
@@ -130,8 +132,26 @@ impl Interpreter {
             }
             Stmt::Variable { name, initializer } => {
                 let value = self.evaluate(initializer)?;
-                self.environment.define(name.lexeme.clone(), value);
+                self.environment
+                    .borrow_mut()
+                    .define(name.lexeme.clone(), value);
                 Ok(())
+            }
+            Stmt::Block(stmts) => {
+                let enclosed =
+                    Environment::new_enclosed(Rc::clone(&self.environment));
+                let previous = std::mem::replace(
+                    &mut self.environment,
+                    Rc::new(RefCell::new(enclosed)),
+                );
+                let result = stmts.iter().try_for_each(|s| self.execute(s));
+                let result = (|| {
+                    for stmt in stmts {
+                        self.execute(stmt)?;
+                    }
+                    Ok(())
+                })();
+                result
             }
             _ => todo!(),
         }
