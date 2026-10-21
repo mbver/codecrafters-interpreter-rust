@@ -25,9 +25,6 @@ impl Environment {
             enclosing: Some(environment),
         }
     }
-    pub fn set_enclosing(&mut self, environment: EnvRef) {
-        self.enclosing = Some(environment)
-    }
     pub fn define(&mut self, name: String, value: Literal) {
         self.values.insert(name, value);
     }

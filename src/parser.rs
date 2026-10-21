@@ -114,6 +114,9 @@ impl Parser {
         if self.match_token(&[TokenType::LEFT_BRACE]).is_some() {
             return Ok(Stmt::Block(self.block()?));
         }
+        if self.match_token(&[TokenType::IF]).is_some() {
+            return self.if_statement();
+        }
         self.expression_statement()
     }
     fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
@@ -135,6 +138,24 @@ impl Parser {
         let value = self.expression()?;
         self.consume(TokenType::SEMICOLON, "Expect ';' afer value.")?;
         Ok(Stmt::Print(value))
+    }
+    fn if_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.")?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.")?;
+        let then_branch = self.statement()?;
+        let else_branch = if self.match_token(&[TokenType::ELSE]).is_some() {
+            self.statement()?
+        } else {
+            Stmt::Expression(Expr::Literal {
+                value: Literal::NULL,
+            })
+        };
+        Ok(Stmt::If {
+            condition,
+            then_branch: Box::new(then_branch),
+            else_branch: Box::new(else_branch),
+        })
     }
     fn expression(&mut self) -> Result<Expr, ParseError> {
         self.assignment()

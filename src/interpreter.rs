@@ -148,6 +148,17 @@ impl Interpreter {
                 self.environment = previous;
                 result
             }
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                if is_truthy(&self.evaluate(condition)?) {
+                    self.execute(then_branch)
+                } else {
+                    self.execute(else_branch)
+                }
+            }
             _ => todo!(),
         }
     }
