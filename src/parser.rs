@@ -1,3 +1,5 @@
+use std::fs::OpenOptions;
+
 use crate::{
     expr::Expr,
     stmt::Stmt,
@@ -161,7 +163,7 @@ impl Parser {
         self.assignment()
     }
     fn assignment(&mut self) -> Result<Expr, ParseError> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
         let Some(equal) = self.match_token(&[TokenType::EQUAL]) else {
             return Ok(expr);
         };
@@ -174,6 +176,30 @@ impl Parser {
             name,
             value: Box::new(value),
         })
+    }
+    fn or(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.and()?;
+        while let Some(operator) = self.match_token(&[TokenType::OR]) {
+            let right = self.and()?;
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            }
+        }
+        Ok(expr)
+    }
+    fn and(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.equality()?;
+        while let Some(operator) = self.match_token(&[TokenType::AND]) {
+            let right = self.equality()?;
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            }
+        }
+        Ok(expr)
     }
     fn equality(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.comparison()?;

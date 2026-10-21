@@ -116,6 +116,19 @@ impl Interpreter {
                 self.environment.borrow_mut().assign(name, value.clone())?;
                 Ok(value)
             }
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let left = self.evaluate(left)?;
+                match operator.token_type {
+                    TokenType::AND if !is_truthy(&left) => return Ok(left),
+                    TokenType::OR if is_truthy(&left) => return Ok(left),
+                    _ => {}
+                };
+                self.evaluate(right)
+            }
             _ => todo!(),
         }
     }
