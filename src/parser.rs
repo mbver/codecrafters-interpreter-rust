@@ -159,17 +159,14 @@ impl Parser {
     }
     fn for_statement(&mut self) -> Result<Stmt, ParseError> {
         self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.")?;
-        let initializer = if self.check(TokenType::SEMICOLON) {
+        let initializer = if self.match_token(&[TokenType::SEMICOLON]).is_some()
+        {
             null_stmt()
         } else if self.match_token(&[TokenType::VAR]).is_some() {
             self.var_declaration()?
         } else {
             self.expression_statement()?
         };
-        self.consume(
-            TokenType::SEMICOLON,
-            "Expect ';' after loop initializer.",
-        )?;
         let condition = if self.check(TokenType::SEMICOLON) {
             Expr::Literal {
                 value: Literal::Boolean(true),
