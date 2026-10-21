@@ -3,6 +3,7 @@ use crate::{
     token::{Literal, Token},
 };
 
+#[derive(Debug)]
 pub enum Stmt {
     Block(Vec<Stmt>),
     Class {

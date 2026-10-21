@@ -181,11 +181,12 @@ impl Parser {
             Stmt::Expression(self.expression()?)
         };
         self.consume(TokenType::RIGHT_PAREN, "Expect ')' after 'for'.")?;
-        let body = Stmt::Block(vec![initializer, self.statement()?, increment]);
-        Ok(Stmt::While {
+        let mut body = Stmt::Block(vec![self.statement()?, increment]);
+        body = Stmt::While {
             condition,
             body: Box::new(body),
-        })
+        };
+        Ok(Stmt::Block(vec![initializer, body]))
     }
     fn if_statement(&mut self) -> Result<Stmt, ParseError> {
         self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.")?;
@@ -470,5 +471,14 @@ mod tests {
         let mut parser = Parser::new(scanner.get_tokens());
         let stmts = parser.parse();
         assert!(!parser.has_error);
+    }
+    #[test]
+    fn parse_for_loop() {
+        let content = "for (var foo = 0; foo < 3;) print foo = foo + 1;";
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
     }
 }
