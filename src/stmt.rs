@@ -1,4 +1,7 @@
-use crate::{expr::Expr, token::Token};
+use crate::{
+    expr::Expr,
+    token::{Literal, Token},
+};
 
 pub enum Stmt {
     Block(Vec<Stmt>),
@@ -31,4 +34,10 @@ pub enum Stmt {
         condition: Expr,
         body: Box<Stmt>,
     },
+}
+
+pub fn null_stmt() -> Stmt {
+    Stmt::Expression(Expr::Literal {
+        value: Literal::NULL,
+    })
 }

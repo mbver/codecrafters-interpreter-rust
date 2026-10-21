@@ -2,7 +2,7 @@ use std::fs::OpenOptions;
 
 use crate::{
     expr::Expr,
-    stmt::Stmt,
+    stmt::{Stmt, null_stmt},
     token::{Literal, Token, TokenType},
 };
 
@@ -119,6 +119,9 @@ impl Parser {
         if self.match_token(&[TokenType::LEFT_BRACE]).is_some() {
             return Ok(Stmt::Block(self.block()?));
         }
+        if self.match_token(&[TokenType::FOR]).is_some() {
+            return self.for_statement();
+        }
         if self.match_token(&[TokenType::IF]).is_some() {
             return self.if_statement();
         }
@@ -154,6 +157,39 @@ impl Parser {
             body: Box::new(body),
         })
     }
+    fn for_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.")?;
+        let initializer = if self.check(TokenType::SEMICOLON) {
+            null_stmt()
+        } else if self.match_token(&[TokenType::VAR]).is_some() {
+            self.var_declaration()?
+        } else {
+            self.expression_statement()?
+        };
+        self.consume(
+            TokenType::SEMICOLON,
+            "Expect ';' after loop initializer.",
+        )?;
+        let condition = if self.check(TokenType::SEMICOLON) {
+            Expr::Literal {
+                value: Literal::Boolean(true),
+            }
+        } else {
+            self.expression()?
+        };
+        self.consume(TokenType::SEMICOLON, "Expect ';' after loop condition.")?;
+        let increment = if self.check(TokenType::RIGHT_PAREN) {
+            null_stmt()
+        } else {
+            Stmt::Expression(self.expression()?)
+        };
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after 'for'.")?;
+        let body = Stmt::Block(vec![initializer, self.statement()?, increment]);
+        Ok(Stmt::While {
+            condition,
+            body: Box::new(body),
+        })
+    }
     fn if_statement(&mut self) -> Result<Stmt, ParseError> {
         self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.")?;
         let condition = self.expression()?;
@@ -162,9 +198,7 @@ impl Parser {
         let else_branch = if self.match_token(&[TokenType::ELSE]).is_some() {
             self.statement()?
         } else {
-            Stmt::Expression(Expr::Literal {
-                value: Literal::NULL,
-            })
+            null_stmt()
         };
         Ok(Stmt::If {
             condition,
