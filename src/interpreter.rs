@@ -1,43 +1,74 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use crate::{
+    callable::{LoxCallable, LoxFunction, NativeFunction},
     environment::{EnvRef, Environment},
     expr::Expr,
     runtime_error::RuntimeError,
+    runtime_value::RuntimeValue,
     stmt::Stmt,
-    token::{Literal, Token, TokenType},
+    token::{Literal, TokenType},
 };
 
 pub struct Interpreter {
     pub has_error: bool,
+    globals: EnvRef,
     environment: EnvRef,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
+        let globals = Rc::new(RefCell::new(Environment::new()));
+        globals.borrow_mut().define(
+            "clock".to_string(),
+            RuntimeValue::Callable(LoxCallable::NativeFunction(
+                NativeFunction {
+                    arity: 0,
+                    function: |_| {
+                        let seconds = SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs_f64();
+                        Ok(RuntimeValue::Literal(Literal::Number(seconds)))
+                    },
+                },
+            )),
+        );
+        let environment = globals.clone();
         Self {
             has_error: false,
-            environment: Rc::new(RefCell::new(Environment::new())),
+            globals,
+            environment,
         }
     }
-    pub fn evaluate(&mut self, expr: &Expr) -> Result<Literal, RuntimeError> {
+    pub fn evaluate(
+        &mut self,
+        expr: &Expr,
+    ) -> Result<RuntimeValue, RuntimeError> {
         match expr {
-            Expr::Literal { value } => Ok(value.clone()),
+            Expr::Literal { value } => Ok(RuntimeValue::Literal(value.clone())),
             Expr::Grouping { expr } => self.evaluate(expr),
             Expr::Unary { operator, right } => {
                 let right = self.evaluate(right)?;
                 match operator.token_type {
                     TokenType::MINUS => {
-                        let Literal::Number(v) = right else {
+                        let RuntimeValue::Literal(Literal::Number(v)) = right
+                        else {
                             // print error message here
                             return Err(RuntimeError::new(
                                 operator.clone(),
                                 "Operand must be a number.",
                             ));
                         };
-                        Ok(Literal::Number(-v))
+                        Ok(RuntimeValue::Literal(Literal::Number(-v)))
                     }
-                    TokenType::BANG => Ok(Literal::Boolean(!is_truthy(&right))),
+                    TokenType::BANG => Ok(RuntimeValue::Literal(
+                        Literal::Boolean(!is_truthy(&right)),
+                    )),
                     _ => unreachable!(),
                 }
             }
@@ -46,32 +77,39 @@ impl Interpreter {
                 operator,
                 right,
             } => {
-                let left = self.evaluate(left)?;
-                let right = self.evaluate(right)?;
+                let left = self.evaluate(left)?.to_literal().map_err(|e| {
+                    RuntimeError::wrong_type(operator, "literal")
+                })?;
+                let right =
+                    self.evaluate(right)?.to_literal().map_err(|e| {
+                        RuntimeError::wrong_type(operator, "literal")
+                    })?;
                 match (left, right) {
                     (Literal::STRING(left), Literal::STRING(right))
                         if operator.token_type == TokenType::PLUS =>
                     {
-                        Ok(Literal::STRING(left + &right))
+                        Ok(RuntimeValue::Literal(Literal::STRING(
+                            left + &right,
+                        )))
                     }
                     (left, right)
                         if operator.token_type == TokenType::BANG_EQUAL =>
                     {
-                        Ok(Literal::Boolean(left != right))
+                        Ok(RuntimeValue::Literal(Literal::Boolean(
+                            left != right,
+                        )))
                     }
                     (left, right)
                         if operator.token_type == TokenType::EQUAL_EQUAL =>
                     {
-                        Ok(Literal::Boolean(left == right))
+                        Ok(RuntimeValue::Literal(Literal::Boolean(
+                            left == right,
+                        )))
                     }
                     (Literal::Number(left), Literal::Number(right)) => {
-                        match operator.token_type {
-                            TokenType::PLUS => {
-                                Ok(Literal::Number(left + right))
-                            }
-                            TokenType::MINUS => {
-                                Ok(Literal::Number(left - right))
-                            }
+                        let value = match operator.token_type {
+                            TokenType::PLUS => Literal::Number(left + right),
+                            TokenType::MINUS => Literal::Number(left - right),
                             TokenType::SLASH => {
                                 if right == 0.0 {
                                     return Err(RuntimeError::new(
@@ -79,25 +117,22 @@ impl Interpreter {
                                         "Division by zero.",
                                     ));
                                 }
-                                Ok(Literal::Number(left / right))
+                                Literal::Number(left / right)
                             }
-                            TokenType::STAR => {
-                                Ok(Literal::Number(left * right))
-                            }
+                            TokenType::STAR => Literal::Number(left * right),
                             TokenType::GREATER => {
-                                Ok(Literal::Boolean(left > right))
+                                Literal::Boolean(left > right)
                             }
                             TokenType::GREATER_EQUAL => {
-                                Ok(Literal::Boolean(left >= right))
+                                Literal::Boolean(left >= right)
                             }
-                            TokenType::LESS => {
-                                Ok(Literal::Boolean(left < right))
-                            }
+                            TokenType::LESS => Literal::Boolean(left < right),
                             TokenType::LESS_EQUAL => {
-                                Ok(Literal::Boolean(left <= right))
+                                Literal::Boolean(left <= right)
                             }
                             _ => unreachable!(),
-                        }
+                        };
+                        Ok(RuntimeValue::Literal(value))
                     }
                     _ => {
                         let msg = match operator.token_type {
@@ -110,6 +145,7 @@ impl Interpreter {
                     }
                 }
             }
+            // TODO: this can evaluate to a Callable or Literal
             Expr::Variable { name } => self.environment.borrow().get(name),
             Expr::Assign { name, value } => {
                 let value = self.evaluate(value)?;
@@ -123,12 +159,36 @@ impl Interpreter {
             } => {
                 let left = self.evaluate(left)?;
                 match operator.token_type {
-                    TokenType::AND if !is_truthy(&left) => return Ok(left),
-                    TokenType::OR if is_truthy(&left) => return Ok(left),
+                    TokenType::AND if !is_truthy(&left) => {
+                        return Ok(left);
+                    }
+                    TokenType::OR if is_truthy(&left) => {
+                        return Ok(left);
+                    }
                     _ => {}
                 };
                 self.evaluate(right)
             }
+            //             Expr::Call {
+            //                 callee,
+            //                 paren,
+            //                 args,
+            //             } => {
+            //                 let callee = self.evaluate(callee)?;
+            //                 let mut arguments = Vec::new();
+            //                 for arg in args {
+            //                     arguments.push(self.evaluate(arg)?);
+            //                 }
+            //                 // TODO: call it directly. Callable is stored in environment
+            //                 let function = Callable::LoxFunction(LoxFunction {
+            //                     callee,
+            //                     args: arguments,
+            //                     paren: paren.clone(),
+            //                 });
+            //                 // TODO: execute it in interpreter
+            //
+            //                 Ok(Literal::NULL)
+            //             }
             _ => todo!(),
         }
     }
@@ -140,7 +200,7 @@ impl Interpreter {
             }
             Stmt::Print(expr) => {
                 let value = self.evaluate(expr)?;
-                print_value(&value);
+                print_value(&value); // TODO: print callable
                 Ok(())
             }
             Stmt::Variable { name, initializer } => {
@@ -192,24 +252,29 @@ impl Interpreter {
     }
 }
 
-fn is_truthy(value: &Literal) -> bool {
+fn is_truthy(value: &RuntimeValue) -> bool {
     match value {
-        Literal::NULL => false,
-        Literal::Boolean(v) => *v,
+        RuntimeValue::Literal(Literal::NULL) => false,
+        RuntimeValue::Literal(Literal::Boolean(v)) => *v,
         _ => true,
     }
 }
 
-pub fn print_value(value: &Literal) {
+pub fn print_value(value: &RuntimeValue) {
     match value {
-        Literal::NULL => println!("nil"),
-        Literal::Number(v) => {
-            let mut text = v.to_string();
-            if text.ends_with(".0") {
-                text.truncate(text.len() - 2);
-            }
-            println!("{}", text);
+        RuntimeValue::Callable(f) => {
+            println!("{}", f)
         }
-        _ => println!("{}", value),
+        RuntimeValue::Literal(value) => match value {
+            Literal::NULL => println!("nil"),
+            Literal::Number(v) => {
+                let mut text = v.to_string();
+                if text.ends_with(".0") {
+                    text.truncate(text.len() - 2);
+                }
+                println!("{}", text);
+            }
+            _ => println!("{}", value),
+        },
     }
 }

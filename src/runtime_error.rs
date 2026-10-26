@@ -18,4 +18,13 @@ impl RuntimeError {
             msg: format!("Undefined variable '{}'.", &name.lexeme),
         }
     }
+    pub fn wrong_type(name: &Token, expected_type: &str) -> Self {
+        Self {
+            token: name.clone(),
+            msg: format!(
+                "Wrong type: '{} is not {}.",
+                &name.lexeme, expected_type
+            ),
+        }
+    }
 }

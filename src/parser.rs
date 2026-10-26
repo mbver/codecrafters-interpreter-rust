@@ -1,5 +1,3 @@
-use std::fs::OpenOptions;
-
 use crate::{
     expr::Expr,
     stmt::{Stmt, null_stmt},
@@ -33,17 +31,6 @@ impl Parser {
             if let Some(stmt) = stmt {
                 statements.push(stmt);
             }
-        }
-        statements
-    }
-    pub fn parse_stmt(&mut self) -> Vec<Stmt> {
-        let mut statements = Vec::new();
-        while !self.is_at_end() {
-            let stmt = self.statement();
-            let Ok(stmt) = stmt else {
-                return statements;
-            };
-            statements.push(stmt);
         }
         statements
     }
@@ -82,6 +69,8 @@ impl Parser {
     fn declaration(&mut self) -> Option<Stmt> {
         let result = if self.match_token(&[TokenType::VAR]).is_some() {
             self.var_declaration()
+        } else if self.match_token(&[TokenType::FUN]).is_some() {
+            self.fun_declaration("function")
         } else {
             self.statement()
         };
@@ -108,6 +97,41 @@ impl Parser {
             "Expect ';' after variable declaration.",
         )?;
         Ok(Stmt::Variable { name, initializer })
+    }
+    fn fun_declaration(&mut self, kind: &str) -> Result<Stmt, ParseError> {
+        let name = self.consume(
+            TokenType::IDENTIFIER,
+            &format!("Expect {} name.", kind),
+        )?;
+        self.consume(
+            TokenType::LEFT_PAREN,
+            &format!("Expect '(' after {kind} name."),
+        )?;
+        let mut params = Vec::new();
+        if !self.check(TokenType::RIGHT_PAREN) {
+            loop {
+                if params.len() >= 255 {
+                    self.error(
+                        self.current().clone(),
+                        "Can't have more than 255 parameters.",
+                    );
+                }
+                params.push(self.consume(
+                    TokenType::IDENTIFIER,
+                    "Expect parameter name.",
+                )?);
+                if self.match_token(&[TokenType::COMMA]).is_none() {
+                    break;
+                }
+            }
+        }
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.")?;
+        self.consume(
+            TokenType::LEFT_BRACE,
+            &format!("Expect '{{' before {kind} body."),
+        )?;
+        let body = self.block()?;
+        Ok(Stmt::Function { name, params, body })
     }
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.match_token(&[TokenType::PRINT]).is_some() {
@@ -319,9 +343,43 @@ impl Parser {
                 right: Box::new(right),
             });
         }
-        self.primary()
+        // TODO: insert self.call()
+        self.call()
+    }
+    fn call(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.primary()?;
+        // handle f()()()
+        while self.match_token(&[TokenType::LEFT_PAREN]).is_some() {
+            expr = self.finish_call(expr)?; // parse and consume ')'
+        }
+        Ok(expr)
+    }
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParseError> {
+        let mut args = Vec::new();
+        if !self.check(TokenType::RIGHT_PAREN) {
+            loop {
+                if args.len() >= 255 {
+                    self.error(
+                        self.current().clone(),
+                        "Can't have more than 255 arguments.",
+                    );
+                }
+                args.push(self.expression()?);
+                if self.match_token(&[TokenType::COMMA]).is_none() {
+                    break;
+                }
+            }
+        }
+        let paren = self
+            .consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.")?;
+        Ok(Expr::Call {
+            callee: Box::new(callee),
+            paren,
+            args,
+        })
     }
 
+    // TODO: define call()
     fn primary(&mut self) -> Result<Expr, ParseError> {
         // Return an error that will bubble up the call stack
         if let Some(token) = self.match_token(&[
@@ -414,7 +472,7 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::{printer, scanner::Scanner, token};
+    use crate::{printer, scanner::Scanner};
 
     use super::*;
 
