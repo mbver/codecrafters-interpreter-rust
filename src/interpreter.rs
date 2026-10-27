@@ -216,8 +216,7 @@ impl Interpreter {
     ) -> Result<RuntimeValue, RuntimeError> {
         match callable {
             LoxCallable::LoxFunction(f) => {
-                let mut environment =
-                    Environment::new_enclosed(self.globals.clone());
+                let mut environment = Environment::new_enclosed(f.closure);
                 for (param, arg) in
                     f.declaration.params.iter().zip(arguments.iter())
                 {
@@ -282,6 +281,7 @@ impl Interpreter {
                     RuntimeValue::Callable(LoxCallable::LoxFunction(
                         LoxFunction {
                             declaration: f.clone(),
+                            closure: self.environment.clone(),
                         },
                     )),
                 );

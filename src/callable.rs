@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use crate::{
+    environment::EnvRef,
     runtime_error::RuntimeError,
     runtime_value::RuntimeValue,
     stmt::{Function, Stmt},
@@ -21,6 +22,7 @@ pub struct NativeFunction {
 #[derive(Clone)]
 pub struct LoxFunction {
     pub declaration: Function,
+    pub closure: EnvRef,
 }
 
 impl LoxCallable {
