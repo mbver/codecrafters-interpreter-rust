@@ -10,7 +10,7 @@ use crate::{
     expr::Expr,
     runtime_error::RuntimeError,
     runtime_value::RuntimeValue,
-    stmt::Stmt,
+    stmt::{Function, Stmt},
     token::{Literal, TokenType},
 };
 
@@ -267,6 +267,17 @@ impl Interpreter {
                 while is_truthy(&self.evaluate(condition)?) {
                     self.execute(body)?;
                 }
+                Ok(())
+            }
+            Stmt::Function(f) => {
+                self.environment.borrow_mut().define(
+                    f.name.lexeme.clone(),
+                    RuntimeValue::Callable(LoxCallable::LoxFunction(
+                        LoxFunction {
+                            declaration: f.clone(),
+                        },
+                    )),
+                );
                 Ok(())
             }
             _ => todo!(),
