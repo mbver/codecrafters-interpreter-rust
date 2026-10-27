@@ -8,7 +8,7 @@ use crate::{
     callable::{LoxCallable, LoxFunction, NativeFunction},
     environment::{EnvRef, Environment},
     expr::Expr,
-    runtime_error::RuntimeError,
+    runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
     stmt::{Function, Stmt},
     token::{Literal, TokenType},
@@ -59,10 +59,10 @@ impl Interpreter {
                         let RuntimeValue::Literal(Literal::Number(v)) = right
                         else {
                             // print error message here
-                            return Err(RuntimeError::new(
+                            return Err(RuntimeError::Error(RealError::new(
                                 operator.clone(),
                                 "Operand must be a number.".to_string(),
-                            ));
+                            )));
                         };
                         Ok(RuntimeValue::Literal(Literal::Number(-v)))
                     }
@@ -78,11 +78,15 @@ impl Interpreter {
                 right,
             } => {
                 let left = self.evaluate(left)?.to_literal().map_err(|e| {
-                    RuntimeError::wrong_type(operator, "literal")
+                    RuntimeError::Error(RealError::wrong_type(
+                        operator, "literal",
+                    ))
                 })?;
                 let right =
                     self.evaluate(right)?.to_literal().map_err(|e| {
-                        RuntimeError::wrong_type(operator, "literal")
+                        RuntimeError::Error(RealError::wrong_type(
+                            operator, "literal",
+                        ))
                     })?;
                 match (left, right) {
                     (Literal::STRING(left), Literal::STRING(right))
@@ -112,9 +116,11 @@ impl Interpreter {
                             TokenType::MINUS => Literal::Number(left - right),
                             TokenType::SLASH => {
                                 if right == 0.0 {
-                                    return Err(RuntimeError::new(
-                                        operator.clone(),
-                                        "Division by zero.".to_string(),
+                                    return Err(RuntimeError::Error(
+                                        RealError::new(
+                                            operator.clone(),
+                                            "Division by zero.".to_string(),
+                                        ),
                                     ));
                                 }
                                 Literal::Number(left / right)
@@ -141,10 +147,10 @@ impl Interpreter {
                             }
                             _ => "Operands must be two numbers",
                         };
-                        Err(RuntimeError::new(
+                        Err(RuntimeError::Error(RealError::new(
                             operator.clone(),
                             msg.to_string(),
-                        ))
+                        )))
                     }
                 }
             }
@@ -179,24 +185,24 @@ impl Interpreter {
             } => {
                 let callee = self.evaluate(callee)?;
                 let RuntimeValue::Callable(callable) = callee else {
-                    return Err(RuntimeError::new(
+                    return Err(RuntimeError::Error(RealError::new(
                         paren.clone(),
                         "Can only call functions and classes".to_string(),
-                    ));
+                    )));
                 };
                 let mut arguments = Vec::new();
                 for arg in args {
                     arguments.push(self.evaluate(arg)?);
                 }
                 if arguments.len() != callable.arity() {
-                    return Err(RuntimeError::new(
+                    return Err(RuntimeError::Error(RealError::new(
                         paren.clone(),
                         format!(
                             "Expected {} arguments but got {}.",
                             callable.arity(),
                             arguments.len()
                         ),
-                    ));
+                    )));
                 }
                 self.call(callable, arguments)
             }
@@ -217,11 +223,17 @@ impl Interpreter {
                 {
                     environment.define(param.lexeme.clone(), arg.clone());
                 }
-                self.execute_block(
+                let value = match self.execute_block(
                     &f.declaration.body,
                     Rc::new(RefCell::new(environment)),
-                )?;
-                Ok(RuntimeValue::Literal(Literal::NULL))
+                ) {
+                    Ok(_) => RuntimeValue::Literal(Literal::NULL),
+                    Err(e) => match e {
+                        RuntimeError::Error(_) => return Err(e),
+                        RuntimeError::Return(v) => v,
+                    },
+                };
+                Ok(value)
             }
             LoxCallable::NativeFunction(f) => (f.function)(&arguments),
         }
@@ -275,6 +287,10 @@ impl Interpreter {
                 );
                 Ok(())
             }
+            Stmt::Return { keyword, value } => {
+                let value = self.evaluate(value)?;
+                Err(RuntimeError::Return(value))
+            }
             _ => todo!(),
         }
     }
@@ -294,7 +310,7 @@ impl Interpreter {
     }
     pub fn interpret(&mut self, stmts: &[Stmt]) {
         for stmt in stmts {
-            if let Err(e) = self.execute(stmt) {
+            if let Err(RuntimeError::Error(e)) = self.execute(stmt) {
                 eprintln!("{}\n[line {}]", e.msg, e.token.line);
                 self.has_error = true;
                 break;

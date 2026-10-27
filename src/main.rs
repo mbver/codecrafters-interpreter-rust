@@ -6,6 +6,7 @@ use std::process;
 use crate::interpreter::Interpreter;
 use crate::interpreter::print_value;
 use crate::parser::Parser;
+use crate::runtime_error::RuntimeError;
 use crate::scanner::Scanner;
 
 mod callable;
@@ -89,10 +90,13 @@ fn main() {
             let mut interpreter = Interpreter::new();
             match interpreter.evaluate(&expr) {
                 Ok(value) => print_value(&value),
-                Err(e) => {
-                    eprintln!("{}\n[line {}]", e.msg, e.token.line);
-                    interpreter.has_error = true;
-                }
+                Err(e) => match e {
+                    RuntimeError::Error(e) => {
+                        eprintln!("{}\n[line {}]", e.msg, e.token.line);
+                        interpreter.has_error = true;
+                    }
+                    _ => unreachable!(),
+                },
             }
             if interpreter.has_error {
                 process::exit(70);

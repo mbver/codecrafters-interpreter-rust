@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     callable::LoxCallable,
-    runtime_error::RuntimeError,
+    runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
     token::{Literal, Token},
 };
@@ -35,7 +35,9 @@ impl Environment {
             return Ok(value.clone());
         }
         let Some(enclosing) = &self.enclosing else {
-            return Err(RuntimeError::undefined_variable(name));
+            return Err(RuntimeError::Error(RealError::undefined_variable(
+                name,
+            )));
         };
         enclosing.borrow().get(name)
     }
@@ -50,7 +52,9 @@ impl Environment {
             return Ok(());
         };
         let Some(enclosing) = &mut self.enclosing else {
-            return Err(RuntimeError::undefined_variable(name));
+            return Err(RuntimeError::Error(RealError::undefined_variable(
+                name,
+            )));
         };
         enclosing.borrow_mut().assign(name, value)
     }

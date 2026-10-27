@@ -137,6 +137,9 @@ impl Parser {
         if self.match_token(&[TokenType::PRINT]).is_some() {
             return self.print_statement();
         }
+        if self.match_token(&[TokenType::RETURN]).is_some() {
+            return self.return_statement();
+        }
         if self.match_token(&[TokenType::WHILE]).is_some() {
             return self.while_statement();
         }
@@ -170,6 +173,18 @@ impl Parser {
         let value = self.expression()?;
         self.consume(TokenType::SEMICOLON, "Expect ';' afer value.")?;
         Ok(Stmt::Print(value))
+    }
+    fn return_statement(&mut self) -> Result<Stmt, ParseError> {
+        let keyword = self.previous().clone();
+        let value = if self.check(TokenType::SEMICOLON) {
+            Expr::Literal {
+                value: Literal::NULL,
+            }
+        } else {
+            self.expression()?
+        };
+        self.consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+        Ok(Stmt::Return { keyword, value })
     }
     fn while_statement(&mut self) -> Result<Stmt, ParseError> {
         self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.")?;

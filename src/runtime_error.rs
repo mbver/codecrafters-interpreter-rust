@@ -1,11 +1,28 @@
-use crate::token::Token;
+use crate::{
+    runtime_value::RuntimeValue,
+    token::{Literal, Token},
+};
 
-pub struct RuntimeError {
+pub enum RuntimeError {
+    Error(RealError),
+    Return(RuntimeValue),
+}
+
+impl RuntimeError {
+    pub fn to_real_error(self) -> Result<RuntimeValue, Self> {
+        match self {
+            Self::Error(_) => Err(self),
+            Self::Return(v) => Ok(v),
+        }
+    }
+}
+
+pub struct RealError {
     pub token: Token,
     pub msg: String,
 }
 
-impl RuntimeError {
+impl RealError {
     pub fn new(token: Token, msg: String) -> Self {
         Self { token, msg }
     }
