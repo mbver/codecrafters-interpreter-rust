@@ -35,7 +35,9 @@ impl LoxCallable {
 impl Display for LoxCallable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LoxCallable::LoxFunction(_) => write!(f, "<lox function>"),
+            LoxCallable::LoxFunction(fun) => {
+                write!(f, "<fn {}>", fun.declaration.name.lexeme)
+            }
             LoxCallable::NativeFunction(_) => write!(f, "<native function>"),
         }
     }
