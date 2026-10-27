@@ -3,7 +3,14 @@ use crate::{
     token::{Literal, Token},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub struct Function {
+    pub name: Token,
+    pub params: Vec<Token>,
+    pub body: Vec<Stmt>,
+}
+
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Block(Vec<Stmt>),
     Class {
@@ -12,11 +19,7 @@ pub enum Stmt {
         methods: Vec<Stmt>, // parser will ensure it is function
     },
     Expression(Expr),
-    Function {
-        name: Token,
-        params: Vec<Token>,
-        body: Vec<Stmt>,
-    },
+    Function(Function),
     If {
         condition: Expr,
         then_branch: Box<Stmt>,

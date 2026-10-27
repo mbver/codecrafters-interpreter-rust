@@ -61,7 +61,7 @@ impl Interpreter {
                             // print error message here
                             return Err(RuntimeError::new(
                                 operator.clone(),
-                                "Operand must be a number.",
+                                "Operand must be a number.".to_string(),
                             ));
                         };
                         Ok(RuntimeValue::Literal(Literal::Number(-v)))
@@ -114,7 +114,7 @@ impl Interpreter {
                                 if right == 0.0 {
                                     return Err(RuntimeError::new(
                                         operator.clone(),
-                                        "Division by zero.",
+                                        "Division by zero.".to_string(),
                                     ));
                                 }
                                 Literal::Number(left / right)
@@ -141,7 +141,10 @@ impl Interpreter {
                             }
                             _ => "Operands must be two numbers",
                         };
-                        Err(RuntimeError::new(operator.clone(), msg))
+                        Err(RuntimeError::new(
+                            operator.clone(),
+                            msg.to_string(),
+                        ))
                     }
                 }
             }
@@ -169,27 +172,55 @@ impl Interpreter {
                 };
                 self.evaluate(right)
             }
-            //             Expr::Call {
-            //                 callee,
-            //                 paren,
-            //                 args,
-            //             } => {
-            //                 let callee = self.evaluate(callee)?;
-            //                 let mut arguments = Vec::new();
-            //                 for arg in args {
-            //                     arguments.push(self.evaluate(arg)?);
-            //                 }
-            //                 // TODO: call it directly. Callable is stored in environment
-            //                 let function = Callable::LoxFunction(LoxFunction {
-            //                     callee,
-            //                     args: arguments,
-            //                     paren: paren.clone(),
-            //                 });
-            //                 // TODO: execute it in interpreter
-            //
-            //                 Ok(Literal::NULL)
-            //             }
+            Expr::Call {
+                callee,
+                paren,
+                args,
+            } => {
+                let callee = self.evaluate(callee)?;
+                let RuntimeValue::Callable(callable) = callee else {
+                    return Err(RuntimeError::new(
+                        paren.clone(),
+                        "Can only call functions and classes".to_string(),
+                    ));
+                };
+                let mut arguments = Vec::new();
+                for arg in args {
+                    arguments.push(self.evaluate(arg)?);
+                }
+                if arguments.len() != callable.arity() {
+                    return Err(RuntimeError::new(
+                        paren.clone(),
+                        format!(
+                            "Expected {} arguments but got {}.",
+                            callable.arity(),
+                            arguments.len()
+                        ),
+                    ));
+                }
+                self.call(callable, arguments)
+            }
             _ => todo!(),
+        }
+    }
+    fn call(
+        &mut self,
+        callable: LoxCallable,
+        arguments: Vec<RuntimeValue>,
+    ) -> Result<RuntimeValue, RuntimeError> {
+        match callable {
+            LoxCallable::LoxFunction(f) => {
+                let mut environment =
+                    Environment::new_enclosed(self.globals.clone());
+                for (param, arg) in
+                    f.declaration.params.iter().zip(arguments.iter())
+                {
+                    environment.define(param.lexeme.clone(), arg.clone());
+                }
+                self.execute(&Stmt::Block(f.declaration.body))?;
+                Ok(RuntimeValue::Literal(Literal::NULL))
+            }
+            LoxCallable::NativeFunction(f) => (f.function)(&arguments),
         }
     }
     fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {

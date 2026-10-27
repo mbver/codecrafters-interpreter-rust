@@ -3,6 +3,7 @@ use std::fmt::Display;
 use crate::{
     runtime_error::RuntimeError,
     runtime_value::RuntimeValue,
+    stmt::{Function, Stmt},
     token::{Literal, Token},
 };
 
@@ -19,16 +20,14 @@ pub struct NativeFunction {
 }
 #[derive(Clone)]
 pub struct LoxFunction {
-    pub callee: Literal,
-    pub args: Vec<Literal>,
-    pub paren: Token,
+    pub declaration: Function,
 }
 
 impl LoxCallable {
     pub fn arity(&self) -> usize {
         match self {
             LoxCallable::NativeFunction(f) => f.arity,
-            LoxCallable::LoxFunction(f) => f.args.len(),
+            LoxCallable::LoxFunction(f) => f.declaration.params.len(),
         }
     }
 }

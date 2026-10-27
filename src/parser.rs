@@ -1,6 +1,6 @@
 use crate::{
     expr::Expr,
-    stmt::{Stmt, null_stmt},
+    stmt::{Function, Stmt, null_stmt},
     token::{Literal, Token, TokenType},
 };
 
@@ -131,7 +131,7 @@ impl Parser {
             &format!("Expect '{{' before {kind} body."),
         )?;
         let body = self.block()?;
-        Ok(Stmt::Function { name, params, body })
+        Ok(Stmt::Function(Function { name, params, body }))
     }
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.match_token(&[TokenType::PRINT]).is_some() {
