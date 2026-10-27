@@ -217,7 +217,10 @@ impl Interpreter {
                 {
                     environment.define(param.lexeme.clone(), arg.clone());
                 }
-                self.execute(&Stmt::Block(f.declaration.body))?;
+                self.execute_block(
+                    &f.declaration.body,
+                    Rc::new(RefCell::new(environment)),
+                )?;
                 Ok(RuntimeValue::Literal(Literal::NULL))
             }
             LoxCallable::NativeFunction(f) => (f.function)(&arguments),
@@ -242,15 +245,7 @@ impl Interpreter {
                 Ok(())
             }
             Stmt::Block(stmts) => {
-                let enclosed =
-                    Environment::new_enclosed(Rc::clone(&self.environment));
-                let previous = std::mem::replace(
-                    &mut self.environment,
-                    Rc::new(RefCell::new(enclosed)),
-                );
-                let result = stmts.iter().try_for_each(|s| self.execute(s));
-                self.environment = previous;
-                result
+                self.execute_block(stmts, self.environment.clone())
             }
             Stmt::If {
                 condition,
@@ -282,6 +277,20 @@ impl Interpreter {
             }
             _ => todo!(),
         }
+    }
+    fn execute_block(
+        &mut self,
+        stmts: &[Stmt],
+        environment: EnvRef,
+    ) -> Result<(), RuntimeError> {
+        let enclosed = Environment::new_enclosed(environment);
+        let previous = std::mem::replace(
+            &mut self.environment,
+            Rc::new(RefCell::new(enclosed)),
+        );
+        let result = stmts.iter().try_for_each(|s| self.execute(s));
+        self.environment = previous;
+        result
     }
     pub fn interpret(&mut self, stmts: &[Stmt]) {
         for stmt in stmts {
@@ -318,5 +327,25 @@ pub fn print_value(value: &RuntimeValue) {
             }
             _ => println!("{}", value),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{parser::Parser, scanner::Scanner};
+
+    use super::*;
+
+    #[test]
+    fn function_with_arguments() {
+        let content = "fun f1(a) {print a;}\nf1(59);";
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut interpreter = Interpreter::new();
+        interpreter.interpret(&stmts);
     }
 }
