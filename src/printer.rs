@@ -46,6 +46,7 @@ mod tests {
                     "-".to_string(),
                     Literal::NULL,
                     1,
+                    0,
                 ),
                 right: Box::new(Expr::Literal {
                     value: Literal::Number(123.0),
@@ -56,6 +57,7 @@ mod tests {
                 lexeme: "*".to_string(),
                 literal: Literal::NULL,
                 line: 1,
+                offset: 5,
             },
             right: Box::new(Expr::Grouping {
                 expr: Box::new(Expr::Literal {

@@ -1,11 +1,8 @@
 use std::fmt::Display;
 
 use crate::{
-    environment::EnvRef,
-    runtime_error::RuntimeError,
-    runtime_value::RuntimeValue,
-    stmt::{Function, Stmt},
-    token::{Literal, Token},
+    environment::EnvRef, runtime_error::RuntimeError,
+    runtime_value::RuntimeValue, stmt::Function,
 };
 
 #[derive(Clone)]

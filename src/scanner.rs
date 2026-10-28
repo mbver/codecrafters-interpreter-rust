@@ -78,6 +78,7 @@ impl<'a> Scanner<'a> {
             "".to_string(),
             Literal::NULL,
             self.line,
+            self.start,
         ));
     }
     pub fn get_tokens(&self) -> Vec<Token> {
@@ -175,8 +176,9 @@ impl<'a> Scanner<'a> {
     }
     fn add_token(&mut self, token_type: TokenType, literal: Literal) {
         let lexeme = self.reader.source[self.start..self.current].to_string();
-        self.tokens
-            .push(Token::new(token_type, lexeme, literal, self.line));
+        self.tokens.push(Token::new(
+            token_type, lexeme, literal, self.line, self.start,
+        ));
     }
     fn add_simple_token(&mut self, token_type: TokenType) {
         self.add_token(token_type, Literal::NULL);

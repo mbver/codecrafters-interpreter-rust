@@ -1,6 +1,4 @@
-use crate::{
-    callable::LoxCallable, runtime_error::RuntimeError, token::Literal,
-};
+use crate::{callable::LoxCallable, token::Literal};
 
 pub struct WrongTypeError;
 #[derive(Clone)]

@@ -183,7 +183,7 @@ impl Parser {
         } else {
             self.expression()?
         };
-        self.consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+        self.consume(TokenType::SEMICOLON, "Expect ';' after return value.")?;
         Ok(Stmt::Return { keyword, value })
     }
     fn while_statement(&mut self) -> Result<Stmt, ParseError> {
@@ -431,7 +431,7 @@ impl Parser {
         if let Some(name) = self.match_token(&[TokenType::IDENTIFIER]) {
             return Ok(Expr::Variable { name });
         }
-        if self.match_token(&[TokenType::LEFT_PAREN]).is_some() {
+        if let Some(_) = self.match_token(&[TokenType::LEFT_PAREN]) {
             let e = self.expression()?;
             self.consume(
                 TokenType::RIGHT_PAREN,

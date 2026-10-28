@@ -95,6 +95,7 @@ pub struct Token {
     pub lexeme: String,
     pub literal: Literal,
     pub line: usize,
+    pub offset: usize,
 }
 
 impl Token {
@@ -103,12 +104,14 @@ impl Token {
         lexeme: String,
         literal: Literal,
         line: usize,
+        offset: usize,
     ) -> Self {
         Self {
             token_type,
             lexeme,
             literal,
             line,
+            offset,
         }
     }
 }

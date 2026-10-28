@@ -1,20 +1,8 @@
-use crate::{
-    runtime_value::RuntimeValue,
-    token::{Literal, Token},
-};
+use crate::{runtime_value::RuntimeValue, token::Token};
 
 pub enum RuntimeError {
     Error(RealError),
     Return(RuntimeValue),
-}
-
-impl RuntimeError {
-    pub fn to_real_error(self) -> Result<RuntimeValue, Self> {
-        match self {
-            Self::Error(_) => Err(self),
-            Self::Return(v) => Ok(v),
-        }
-    }
 }
 
 pub struct RealError {

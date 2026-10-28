@@ -1,23 +1,25 @@
 use std::{
     cell::RefCell,
+    collections::HashMap,
     rc::Rc,
     time::{SystemTime, UNIX_EPOCH},
 };
 
 use crate::{
     callable::{LoxCallable, LoxFunction, NativeFunction},
-    environment::{EnvRef, Environment},
+    environment::{EnvRef, Environment, assign_at, get_at},
     expr::Expr,
     runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
-    stmt::{Function, Stmt},
-    token::{Literal, TokenType},
+    stmt::Stmt,
+    token::{Literal, Token, TokenType},
 };
 
 pub struct Interpreter {
     pub has_error: bool,
     globals: EnvRef,
     environment: EnvRef,
+    locals: HashMap<usize, usize>,
 }
 
 impl Interpreter {
@@ -43,8 +45,22 @@ impl Interpreter {
             has_error: false,
             globals,
             environment,
+            locals: HashMap::new(),
         }
     }
+    pub fn register_local(&mut self, offset: usize, depth: usize) {
+        self.locals.insert(offset, depth);
+    }
+    pub fn lookup_variable(
+        &self,
+        name: &Token,
+    ) -> Result<RuntimeValue, RuntimeError> {
+        let Some(distance) = self.locals.get(&name.offset) else {
+            return self.globals.borrow().get(name);
+        };
+        get_at(Rc::clone(&self.environment), *distance, name)
+    }
+
     pub fn evaluate(
         &mut self,
         expr: &Expr,
@@ -155,10 +171,19 @@ impl Interpreter {
                 }
             }
             // TODO: this can evaluate to a Callable or Literal
-            Expr::Variable { name } => self.environment.borrow().get(name),
+            Expr::Variable { name } => self.lookup_variable(name),
             Expr::Assign { name, value } => {
                 let value = self.evaluate(value)?;
-                self.environment.borrow_mut().assign(name, value.clone())?;
+                if let Some(distance) = self.locals.get(&name.offset) {
+                    assign_at(
+                        Rc::clone(&self.environment),
+                        *distance,
+                        name,
+                        value.clone(),
+                    )?;
+                } else {
+                    self.globals.borrow_mut().assign(name, value.clone())?;
+                };
                 Ok(value)
             }
             Expr::Logical {
