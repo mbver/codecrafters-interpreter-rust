@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     callable::{LoxCallable, LoxFunction, NativeFunction},
-    environment::{EnvRef, Environment, assign_at, get_at},
+    environment::{self, EnvRef, Environment, assign_at, get_at},
     expr::Expr,
     runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
@@ -279,7 +279,9 @@ impl Interpreter {
                 Ok(())
             }
             Stmt::Block(stmts) => {
-                self.execute_block(stmts, self.environment.clone())
+                let environment =
+                    Environment::new_enclosed(self.environment.clone());
+                self.execute_block(stmts, Rc::new(RefCell::new(environment)))
             }
             Stmt::If {
                 condition,
@@ -322,11 +324,7 @@ impl Interpreter {
         stmts: &[Stmt],
         environment: EnvRef,
     ) -> Result<(), RuntimeError> {
-        let enclosed = Environment::new_enclosed(environment);
-        let previous = std::mem::replace(
-            &mut self.environment,
-            Rc::new(RefCell::new(enclosed)),
-        );
+        let previous = std::mem::replace(&mut self.environment, environment);
         let result = stmts.iter().try_for_each(|s| self.execute(s));
         self.environment = previous;
         result
@@ -371,7 +369,11 @@ pub fn print_value(value: &RuntimeValue) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{parser::Parser, scanner::Scanner};
+    use crate::{
+        parser::Parser,
+        resolver::{self, Resolver},
+        scanner::Scanner,
+    };
 
     use super::*;
 
@@ -385,6 +387,34 @@ mod tests {
         let stmts = parser.parse();
         assert!(!parser.has_error);
         let mut interpreter = Interpreter::new(HashMap::new());
+        interpreter.interpret(&stmts);
+    }
+    #[test]
+    fn resolve_variables() {
+        let content = r#"
+var variable = "global";
+
+{
+    fun f() {
+        print variable;
+    }
+
+    f();
+
+    var variable = "local";
+
+    f();
+}
+"#;
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut resolver = Resolver::new();
+        let res = resolver.resolve_stmts(&stmts);
+        let mut interpreter = Interpreter::new(resolver.into_locals());
         interpreter.interpret(&stmts);
     }
 }

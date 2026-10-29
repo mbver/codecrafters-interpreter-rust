@@ -1,7 +1,7 @@
 use crate::{callable::LoxCallable, token::Literal};
 
 pub struct WrongTypeError;
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RuntimeValue {
     Literal(Literal),
     Callable(LoxCallable),

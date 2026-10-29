@@ -10,7 +10,7 @@ pub type EnvRef = Rc<RefCell<Environment>>;
 
 pub fn ancestor(environment: EnvRef, distance: usize) -> EnvRef {
     let mut current = environment;
-    for _ in 0..distance {
+    for i in 0..distance {
         let enclosing = current.borrow().enclosing.clone();
         current = enclosing.expect("Missing enclosing environment");
     }
@@ -33,6 +33,7 @@ pub fn assign_at(
         .borrow_mut()
         .assign_local(name, value)
 }
+#[derive(Debug)]
 pub struct Environment {
     values: HashMap<String, RuntimeValue>,
     enclosing: Option<EnvRef>,

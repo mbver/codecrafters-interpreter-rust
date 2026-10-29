@@ -1,17 +1,17 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::{
     environment::EnvRef, runtime_error::RuntimeError,
     runtime_value::RuntimeValue, stmt::Function,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum LoxCallable {
     NativeFunction(NativeFunction),
     LoxFunction(LoxFunction),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NativeFunction {
     pub arity: usize,
     pub function: fn(&[RuntimeValue]) -> Result<RuntimeValue, RuntimeError>,
@@ -22,6 +22,11 @@ pub struct LoxFunction {
     pub closure: EnvRef,
 }
 
+impl Debug for LoxFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<function: {}>", self.declaration.name.lexeme)
+    }
+}
 impl LoxCallable {
     pub fn arity(&self) -> usize {
         match self {

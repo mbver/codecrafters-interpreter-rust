@@ -389,3 +389,19 @@ if (hadError) return;
 
 interpreter.interpret(statements);
 ```
+
+```
+var variable = "global";
+
+{
+  fun f() {
+    print variable;
+  }
+
+  f();
+
+  var variable = "local";
+
+  f();
+}
+```

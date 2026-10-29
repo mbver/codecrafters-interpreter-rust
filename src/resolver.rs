@@ -14,6 +14,7 @@ pub struct Resolver {
     current_function: FunctionType,
 }
 
+#[derive(Debug)]
 pub struct ResolveError {
     pub token: Token,
     pub msg: String,
