@@ -54,18 +54,7 @@ impl Environment {
     pub fn define(&mut self, name: String, value: RuntimeValue) {
         self.values.insert(name, value);
     }
-    // TODO: only use get_local because now variable is resolved?
-    pub fn get(&self, name: &Token) -> Result<RuntimeValue, RuntimeError> {
-        if let Some(value) = self.values.get(&name.lexeme) {
-            return Ok(value.clone());
-        }
-        let Some(enclosing) = &self.enclosing else {
-            return Err(RuntimeError::Error(RealError::undefined_variable(
-                name,
-            )));
-        };
-        enclosing.borrow().get(name)
-    }
+
     pub fn get_local(
         &self,
         name: &Token,
@@ -89,22 +78,5 @@ impl Environment {
         };
         *existing = value;
         Ok(())
-    }
-    // TODO: only use assign_local because variable is resolved?
-    pub fn assign(
-        &mut self,
-        name: &Token,
-        value: RuntimeValue,
-    ) -> Result<(), RuntimeError> {
-        if let Some(existing) = self.values.get_mut(&name.lexeme) {
-            *existing = value;
-            return Ok(());
-        };
-        let Some(enclosing) = &mut self.enclosing else {
-            return Err(RuntimeError::Error(RealError::undefined_variable(
-                name,
-            )));
-        };
-        enclosing.borrow_mut().assign(name, value)
     }
 }

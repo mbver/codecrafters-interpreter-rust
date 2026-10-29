@@ -313,7 +313,7 @@ scope.put(name.lexeme, false);
 
 ```
 return "at top level";
-This executes a return statement, but it’s not even inside a function at all. It’s top-level code. I don’t know what the user thinks is going to happen, but I don’t think we want Lox to allow this.
+This executes a return statement, but it’s not even inside a function at all. It’s top-level code.
 ```
 
 ```
@@ -353,8 +353,8 @@ private void resolveFunction(
 
 ```
 endScope();
-lox/Resolver.java
-in resolveFunction()
+// lox/Resolver.java
+// in resolveFunction()
 currentFunction = enclosingFunction;
 }
 ```

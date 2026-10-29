@@ -56,7 +56,7 @@ impl Interpreter {
         name: &Token,
     ) -> Result<RuntimeValue, RuntimeError> {
         let Some(distance) = self.locals.get(&name.offset) else {
-            return self.globals.borrow().get(name);
+            return self.globals.borrow().get_local(name);
         };
         get_at(Rc::clone(&self.environment), *distance, name)
     }
@@ -182,7 +182,9 @@ impl Interpreter {
                         value.clone(),
                     )?;
                 } else {
-                    self.globals.borrow_mut().assign(name, value.clone())?;
+                    self.globals
+                        .borrow_mut()
+                        .assign_local(name, value.clone())?;
                 };
                 Ok(value)
             }
