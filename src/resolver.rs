@@ -23,7 +23,7 @@ impl Resolver {
     pub fn new() -> Self {
         Self {
             locals: HashMap::new(),
-            scopes: vec![HashMap::new()],
+            scopes: Vec::new(),
             current_function: FunctionType::NONE,
         }
     }
@@ -75,7 +75,7 @@ impl Resolver {
             std::mem::replace(&mut self.current_function, function_type);
         self.begin_scope();
         for param in params {
-            self.declare(param)?;
+            self.declare(param)?; // end withoug end_scope????
             self.define(param);
         }
         let res = self.resolve_stmts(stmts);
@@ -190,20 +190,47 @@ impl Resolver {
                 self.resolve_expr(right)?;
             }
             Expr::Variable { name } => {
-                // if let Some(scope) = self.scopes.last() {
-                //     if let Some(false) = scope.get(&name.lexeme) {
-                //         return Err(ResolveError {
-                //             token: name.clone(),
-                //             msg:
-                //                 "Can't read local variable in its own initializer."
-                //                     .to_string(),
-                //         });
-                //     }
-                // }
+                if let Some(scope) = self.scopes.last() {
+                    if let Some(false) = scope.get(&name.lexeme) {
+                        return Err(ResolveError {
+                            token: name.clone(),
+                            msg:
+                                "Can't read local variable in its own initializer."
+                                    .to_string(),
+                        });
+                    }
+                }
                 self.resolve_local(name);
             }
             _ => todo!(),
         }
         Ok(())
+    }
+}
+
+mod test {
+    use crate::{parser::Parser, scanner::Scanner};
+
+    use super::*;
+    #[test]
+    fn allow_redeclaration_in_global_scope() {
+        let content = r#"
+// First declaration of variable 'a' in global
+// scope
+var a = "value";
+// Redeclaring 'a' with its own value should be
+// allowed in global scope
+var a = a;
+print a; // this should print "value"
+"#;
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut resolver = Resolver::new();
+        let res = resolver.resolve_stmts(&stmts);
+        assert!(res.is_ok());
     }
 }

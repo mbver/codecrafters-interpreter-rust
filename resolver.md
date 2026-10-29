@@ -432,3 +432,13 @@ while (running) {
   }
 }
 ```
+
+```
+// First declaration of variable 'a' in global
+// scope
+var a = "value";
+// Redeclaring 'a' with its own value should be
+// allowed in global scope
+var a = a;
+print a; // this should print "value"
+```
