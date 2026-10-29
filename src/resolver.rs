@@ -190,16 +190,16 @@ impl Resolver {
                 self.resolve_expr(right)?;
             }
             Expr::Variable { name } => {
-                // if let Some(scope) = self.scopes.last() {
-                //     if let Some(false) = scope.get(&name.lexeme) {
-                //         return Err(ResolveError {
-                //             token: name.clone(),
-                //             msg:
-                //                 "Can't read local variable in its own initializer."
-                //                     .to_string(),
-                //         });
-                //     }
-                // }
+                if let Some(scope) = self.scopes.last() {
+                    if let Some(false) = scope.get(&name.lexeme) {
+                        return Err(ResolveError {
+                            token: name.clone(),
+                            msg:
+                                "Can't read local variable in its own initializer."
+                                    .to_string(),
+                        });
+                    }
+                }
                 self.resolve_local(name);
             }
             _ => todo!(),
