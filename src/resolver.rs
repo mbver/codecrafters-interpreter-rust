@@ -40,13 +40,13 @@ impl Resolver {
         let Some(scope) = self.scopes.last_mut() else {
             return Ok(());
         };
-        // if scope.contains_key(&name.lexeme) {
-        //     return Err(ResolveError {
-        //         token: name.clone(),
-        //         msg: "Already a variable with this name in this scope."
-        //             .to_string(),
-        //     });
-        // }
+        if scope.contains_key(&name.lexeme) {
+            return Err(ResolveError {
+                token: name.clone(),
+                msg: "Already a variable with this name in this scope."
+                    .to_string(),
+            });
+        }
         scope.insert(name.lexeme.clone(), false);
         Ok(())
     }
