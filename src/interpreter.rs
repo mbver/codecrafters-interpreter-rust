@@ -23,7 +23,7 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new() -> Self {
+    pub fn new(locals: HashMap<usize, usize>) -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
         globals.borrow_mut().define(
             "clock".to_string(),
@@ -45,11 +45,8 @@ impl Interpreter {
             has_error: false,
             globals,
             environment,
-            locals: HashMap::new(),
+            locals: locals,
         }
-    }
-    pub fn register_local(&mut self, offset: usize, depth: usize) {
-        self.locals.insert(offset, depth);
     }
     pub fn lookup_variable(
         &self,
@@ -170,7 +167,6 @@ impl Interpreter {
                     }
                 }
             }
-            // TODO: this can evaluate to a Callable or Literal
             Expr::Variable { name } => self.lookup_variable(name),
             Expr::Assign { name, value } => {
                 let value = self.evaluate(value)?;
@@ -388,7 +384,7 @@ mod tests {
         let mut parser = Parser::new(scanner.get_tokens());
         let stmts = parser.parse();
         assert!(!parser.has_error);
-        let mut interpreter = Interpreter::new();
+        let mut interpreter = Interpreter::new(HashMap::new());
         interpreter.interpret(&stmts);
     }
 }

@@ -37,12 +37,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
 ```
 @Override
-public Void visitBlockStmt(Stmt.Block stmt) {
-  beginScope();
-  resolve(stmt.statements);
-  endScope();
-  return null;
-}
+
 
   void resolve(List<Stmt> statements) {
     for (Stmt statement : statements) {
@@ -73,7 +68,34 @@ public Void visitBlockStmt(Stmt.Block stmt) {
       scopes.pop();
     }
 
+private void declare(Token name) {
+  if (scopes.isEmpty()) return;
 
+  Map<String, Boolean> scope = scopes.peek();
+  scope.put(name.lexeme, false);
+}
+
+  private void define(Token name) {
+    if (scopes.isEmpty()) return;
+    scopes.peek().put(name.lexeme, true);
+  }
+
+
+  private void resolveLocal(Expr expr, Token name) {
+    for (int i = scopes.size() - 1; i >= 0; i--) {
+      if (scopes.get(i).containsKey(name.lexeme)) {
+        interpreter.resolve(expr, scopes.size() - 1 - i);
+        return;
+      }
+    }
+  }
+
+public Void visitBlockStmt(Stmt.Block stmt) {
+  beginScope();
+  resolve(stmt.statements);
+  endScope();
+  return null;
+}
     public Void visitVarStmt(Stmt.Var stmt) {
       declare(stmt.name);
       if (stmt.initializer != null) {
@@ -92,43 +114,7 @@ var a = "outer";
 ```
 
 ```
-private void declare(Token name) {
-  if (scopes.isEmpty()) return;
 
-  Map<String, Boolean> scope = scopes.peek();
-  scope.put(name.lexeme, false);
-}
-
-  private void define(Token name) {
-    if (scopes.isEmpty()) return;
-    scopes.peek().put(name.lexeme, true);
-  }
-
-  public Void visitVariableExpr(Expr.Variable expr) {
-    if (!scopes.isEmpty() &&
-        scopes.peek().get(expr.name.lexeme) == Boolean.FALSE) {
-      Lox.error(expr.name,
-          "Can't read local variable in its own initializer.");
-    }
-
-    resolveLocal(expr, expr.name);
-    return null;
-  }
-
-  private void resolveLocal(Expr expr, Token name) {
-    for (int i = scopes.size() - 1; i >= 0; i--) {
-      if (scopes.get(i).containsKey(name.lexeme)) {
-        interpreter.resolve(expr, scopes.size() - 1 - i);
-        return;
-      }
-    }
-  }
-
-  public Void visitAssignExpr(Expr.Assign expr) {
-    resolve(expr.value);
-    resolveLocal(expr, expr.name);
-    return null;
-  }
 
   public Void visitFunctionStmt(Stmt.Function stmt) {
     declare(stmt.name);
@@ -179,6 +165,29 @@ private void declare(Token name) {
     resolve(stmt.body);
     return null;
   }
+
+
+
+
+
+
+  public Void visitAssignExpr(Expr.Assign expr) {
+    resolve(expr.value);
+    resolveLocal(expr, expr.name);
+    return null;
+  }
+
+  public Void visitVariableExpr(Expr.Variable expr) {
+    if (!scopes.isEmpty() &&
+        scopes.peek().get(expr.name.lexeme) == Boolean.FALSE) {
+      Lox.error(expr.name,
+          "Can't read local variable in its own initializer.");
+    }
+
+    resolveLocal(expr, expr.name);
+    return null;
+  }
+
 
   public Void visitBinaryExpr(Expr.Binary expr) {
     resolve(expr.left);

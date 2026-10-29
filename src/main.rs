@@ -1,4 +1,5 @@
 #![allow(unused_variables)]
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::process;
@@ -6,6 +7,7 @@ use std::process;
 use crate::interpreter::Interpreter;
 use crate::interpreter::print_value;
 use crate::parser::Parser;
+use crate::resolver::Resolver;
 use crate::runtime_error::RuntimeError;
 use crate::scanner::Scanner;
 
@@ -15,6 +17,7 @@ mod expr;
 mod interpreter;
 mod parser;
 mod printer;
+mod resolver;
 mod runtime_error;
 mod runtime_value;
 mod scanner;
@@ -87,7 +90,7 @@ fn main() {
                 process::exit(65);
             }
             let expr = expr.unwrap();
-            let mut interpreter = Interpreter::new();
+            let mut interpreter = Interpreter::new(HashMap::new());
             match interpreter.evaluate(&expr) {
                 Ok(value) => print_value(&value),
                 Err(e) => match e {
@@ -119,7 +122,12 @@ fn main() {
             if parser.has_error {
                 process::exit(65);
             }
-            let mut interpreter = Interpreter::new();
+            let mut resolver = Resolver::new();
+            if let Err(e) = resolver.resolve_stmts(&stmts) {
+                eprintln!("{}\n [line {}]\n", e.msg, e.token.line);
+                process::exit(65);
+            }
+            let mut interpreter = Interpreter::new(resolver.into_locals());
             interpreter.interpret(&stmts);
             if interpreter.has_error {
                 process::exit(70);
