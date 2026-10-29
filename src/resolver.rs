@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 
 use crate::{expr::Expr, stmt::Stmt, token::Token};
 
@@ -170,6 +170,9 @@ impl Resolver {
                 args,
             } => {
                 self.resolve_expr(callee)?;
+                for arg in args {
+                    self.resolve_expr(arg)?;
+                }
             }
             Expr::Grouping { expr } => {
                 self.resolve_expr(expr)?;

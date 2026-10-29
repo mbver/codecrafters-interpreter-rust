@@ -417,4 +417,32 @@ var variable = "global";
         let mut interpreter = Interpreter::new(resolver.into_locals());
         interpreter.interpret(&stmts);
     }
+
+    #[test]
+    fn higher_order_fun() {
+        let content = r#"
+fun returnArg(arg) {
+    return arg;
+}
+fun returnFunCallWithArg(func, arg) {
+    return returnArg(func)(arg);
+}
+fun printArg(arg) {
+    print arg;
+}
+returnFunCallWithArg(printArg, "foo");
+        "#;
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut resolver = Resolver::new();
+        let res = resolver.resolve_stmts(&stmts);
+        assert!(res.is_ok());
+        let mut interpreter = Interpreter::new(resolver.into_locals());
+        interpreter.interpret(&stmts);
+        assert!(!interpreter.has_error);
+    }
 }
