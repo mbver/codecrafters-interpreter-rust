@@ -418,3 +418,17 @@ fun printArg(arg) {
 }
 returnFunCallWithArg(printArg, "foo");
 ```
+
+```
+var startTime = clock();
+var lastCheck = startTime;
+var running = true;
+print "Starting timer for 0.2 seconds";
+var startTime = clock();
+while (running) {
+  if (clock() > startTime + 0.2) {
+    print "Timer ended";
+    running = false;
+  }
+}
+```

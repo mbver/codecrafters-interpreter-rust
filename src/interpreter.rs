@@ -445,4 +445,34 @@ returnFunCallWithArg(printArg, "foo");
         interpreter.interpret(&stmts);
         assert!(!interpreter.has_error);
     }
+
+    #[test]
+    fn already_a_variable_in_scope() {
+        let content = r#"
+var startTime = clock();
+var lastCheck = startTime;
+var running = true;
+print "Starting timer for 0.2 seconds";
+var startTime = clock();
+while (running) {
+    if (clock() > startTime + 0.2) {
+    print "Timer ended";
+    running = false;
+    }
+}
+"#;
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut resolver = Resolver::new();
+        let res = resolver.resolve_stmts(&stmts);
+        println!("========== res: {:?}", res);
+        assert!(res.is_ok());
+        let mut interpreter = Interpreter::new(resolver.into_locals());
+        interpreter.interpret(&stmts);
+        assert!(!interpreter.has_error);
+    }
 }
