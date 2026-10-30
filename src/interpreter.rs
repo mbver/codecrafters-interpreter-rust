@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     callable::{LoxCallable, LoxFunction, NativeFunction},
-    environment::{self, EnvRef, Environment, assign_at, get_at},
+    environment::{EnvRef, Environment, assign_at, get_at},
     expr::Expr,
     runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
@@ -369,11 +369,7 @@ pub fn print_value(value: &RuntimeValue) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        parser::Parser,
-        resolver::{self, Resolver},
-        scanner::Scanner,
-    };
+    use crate::{parser::Parser, resolver::Resolver, scanner::Scanner};
 
     use super::*;
 

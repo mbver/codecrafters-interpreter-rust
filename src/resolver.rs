@@ -208,6 +208,7 @@ impl Resolver {
     }
 }
 
+#[cfg(test)]
 mod test {
     use crate::{parser::Parser, scanner::Scanner};
 
