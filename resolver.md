@@ -166,11 +166,6 @@ var a = "outer";
     return null;
   }
 
-
-
-
-
-
   public Void visitAssignExpr(Expr.Assign expr) {
     resolve(expr.value);
     resolveLocal(expr, expr.name);

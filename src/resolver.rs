@@ -74,11 +74,13 @@ impl Resolver {
         let enclosing_function =
             std::mem::replace(&mut self.current_function, function_type);
         self.begin_scope();
-        for param in params {
-            self.declare(param)?; // end withoug end_scope????
-            self.define(param);
-        }
-        let res = self.resolve_stmts(stmts);
+        let res = (|| {
+            for param in params {
+                self.declare(param)?; // end withoug end_scope????
+                self.define(param);
+            }
+            self.resolve_stmts(stmts)
+        })();
         self.end_scope();
         self.current_function = enclosing_function;
         res?;
@@ -91,6 +93,14 @@ impl Resolver {
                 let result = self.resolve_stmts(stmts);
                 self.end_scope();
                 result?;
+            }
+            Stmt::Class {
+                name,
+                superclass,
+                methods,
+            } => {
+                self.declare(name)?;
+                self.define(name);
             }
             Stmt::Variable { name, initializer } => {
                 self.declare(name)?;

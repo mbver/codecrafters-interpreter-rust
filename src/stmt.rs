@@ -15,8 +15,8 @@ pub enum Stmt {
     Block(Vec<Stmt>),
     Class {
         name: Token,
-        superclass: Expr,   // parser will ensure it is variable
-        methods: Vec<Stmt>, // parser will ensure it is function
+        superclass: Option<Expr>, // parser will ensure it is variable
+        methods: Vec<Stmt>,       // parser will ensure it is function
     },
     Expression(Expr),
     Function(Function),

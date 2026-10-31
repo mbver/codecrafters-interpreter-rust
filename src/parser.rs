@@ -69,6 +69,8 @@ impl Parser {
     fn declaration(&mut self) -> Option<Stmt> {
         let result = if self.match_token(&[TokenType::VAR]).is_some() {
             self.var_declaration()
+        } else if self.match_token(&[TokenType::CLASS]).is_some() {
+            self.class_declaration()
         } else if self.match_token(&[TokenType::FUN]).is_some() {
             self.fun_declaration("function")
         } else {
@@ -97,6 +99,21 @@ impl Parser {
             "Expect ';' after variable declaration.",
         )?;
         Ok(Stmt::Variable { name, initializer })
+    }
+    fn class_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let name =
+            self.consume(TokenType::IDENTIFIER, "Expect a class name.")?;
+        self.consume(TokenType::LEFT_BRACE, "Expect '{' before class body.")?;
+        let mut methods = Vec::new();
+        while !self.check(TokenType::RIGHT_BRACE) && !self.is_at_end() {
+            methods.push(self.fun_declaration("method")?);
+        }
+        self.consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.")?;
+        Ok(Stmt::Class {
+            name,
+            superclass: None,
+            methods: methods,
+        })
     }
     fn fun_declaration(&mut self, kind: &str) -> Result<Stmt, ParseError> {
         let name = self.consume(
