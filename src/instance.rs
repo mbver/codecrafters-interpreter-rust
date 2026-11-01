@@ -30,6 +30,7 @@ impl LoxInstance {
             return Ok(value.clone());
         }
         if let Some(method) = instance_ref.class.find_method(&name.lexeme) {
+            let method = method.bind(instance.clone());
             return Ok(RuntimeValue::Callable(LoxCallable::LoxFunction(
                 method,
             )));
