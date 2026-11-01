@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use crate::{
+    callable::{LoxCallable, LoxFunction},
     class::LoxClass,
     runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
@@ -23,6 +24,11 @@ impl LoxInstance {
     pub fn get(&self, name: &Token) -> Result<RuntimeValue, RuntimeError> {
         if let Some(value) = self.fields.get(&name.lexeme) {
             return Ok(value.clone());
+        }
+        if let Some(method) = self.class.find_method(&name.lexeme) {
+            return Ok(RuntimeValue::Callable(LoxCallable::LoxFunction(
+                method,
+            )));
         }
         Err(RuntimeError::Error(RealError {
             token: name.clone(),

@@ -1,11 +1,16 @@
 use std::collections::HashMap;
 
-use crate::{expr::Expr, stmt::Stmt, token::Token};
+use crate::{
+    expr::Expr,
+    stmt::{Function, Stmt},
+    token::Token,
+};
 
 #[derive(PartialEq)]
 enum FunctionType {
     NONE,
     FUNCTION,
+    METHOD,
 }
 
 pub struct Resolver {
@@ -101,6 +106,17 @@ impl Resolver {
             } => {
                 self.declare(name)?;
                 self.define(name);
+                for stmt in methods {
+                    let Stmt::Function(Function { name, params, body }) = stmt
+                    else {
+                        return Err(ResolveError {
+                            token: name.clone(),
+                            msg: "Method is not a function statement."
+                                .to_string(),
+                        });
+                    };
+                    self.resolve_function(params, body, FunctionType::METHOD)?;
+                }
             }
             Stmt::Variable { name, initializer } => {
                 self.declare(name)?;

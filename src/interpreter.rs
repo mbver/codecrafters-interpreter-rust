@@ -13,7 +13,7 @@ use crate::{
     instance::LoxInstance,
     runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
-    stmt::Stmt,
+    stmt::{Function, Stmt},
     token::{Literal, Token, TokenType},
 };
 
@@ -331,7 +331,22 @@ impl Interpreter {
                     name.lexeme.clone(),
                     RuntimeValue::Literal(Literal::NULL),
                 );
-                let class = LoxClass::new(name.lexeme.clone());
+                let mut method_map = HashMap::new();
+                for method in methods {
+                    let Stmt::Function(f) = method else {
+                        return Err(RuntimeError::Error(RealError {
+                            token: name.clone(),
+                            msg: "Method is not a function statement."
+                                .to_string(),
+                        }));
+                    };
+                    let function = LoxFunction {
+                        declaration: f.clone(),
+                        closure: self.environment.clone(),
+                    };
+                    method_map.insert(f.name.lexeme.clone(), function);
+                }
+                let class = LoxClass::new(name.lexeme.clone(), method_map);
                 self.environment
                     .borrow_mut()
                     .assign_local(name, RuntimeValue::Class(class))?;

@@ -1,8 +1,11 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
+
+use crate::callable::LoxFunction;
 
 #[derive(Clone, Debug)]
 pub struct LoxClass {
     pub name: String,
+    pub methods: HashMap<String, LoxFunction>,
 }
 
 impl Display for LoxClass {
@@ -12,7 +15,10 @@ impl Display for LoxClass {
 }
 
 impl LoxClass {
-    pub fn new(name: String) -> Self {
-        Self { name }
+    pub fn new(name: String, methods: HashMap<String, LoxFunction>) -> Self {
+        Self { name, methods }
+    }
+    pub fn find_method(&self, name: &str) -> Option<LoxFunction> {
+        self.methods.get(name).cloned()
     }
 }
