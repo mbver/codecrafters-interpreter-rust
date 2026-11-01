@@ -1,10 +1,17 @@
-use crate::{callable::LoxCallable, token::Literal};
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{
+    callable::LoxCallable, class::LoxClass, instance::LoxInstance,
+    token::Literal,
+};
 
 pub struct WrongTypeError;
 #[derive(Clone, Debug)]
 pub enum RuntimeValue {
     Literal(Literal),
     Callable(LoxCallable),
+    Class(LoxClass),
+    Instance(Rc<RefCell<LoxInstance>>),
 }
 
 impl RuntimeValue {

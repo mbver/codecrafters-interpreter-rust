@@ -12,8 +12,10 @@ use crate::runtime_error::RuntimeError;
 use crate::scanner::Scanner;
 
 mod callable;
+mod class;
 mod environment;
 mod expr;
+mod instance;
 mod interpreter;
 mod parser;
 mod printer;

@@ -193,6 +193,37 @@ public Void visitGetExpr(Expr.Get expr) {
 }
 ```
 
+public Object visitGetExpr(Expr.Get expr) {
+Object object = evaluate(expr.object);
+if (object instanceof LoxInstance) {
+return ((LoxInstance) object).get(expr.name);
+}
+
+    throw new RuntimeError(expr.name,
+        "Only instances have properties.");
+
+}
+
+private LoxClass klass;
+lox/LoxInstance.java
+in class LoxInstance
+private final Map<String, Object> fields = new HashMap<>();
+
+LoxInstance(LoxClass klass) {
+
+Object get(Token name) {
+if (fields.containsKey(name.lexeme)) {
+return fields.get(name.lexeme);
+}
+
+    throw new RuntimeError(name,
+        "Undefined property '" + name.lexeme + "'.");
+
+}
+
+assignment → ( call "." )? IDENTIFIER "=" assignment
+| logic_or ;
+
 ```
 return new Expr.Assign(name, value);
 // lox/Parser.java

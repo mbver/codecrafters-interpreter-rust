@@ -76,7 +76,7 @@ impl Resolver {
         self.begin_scope();
         let res = (|| {
             for param in params {
-                self.declare(param)?; // end withoug end_scope????
+                self.declare(param)?;
                 self.define(param);
             }
             self.resolve_stmts(stmts)
@@ -184,6 +184,9 @@ impl Resolver {
                     self.resolve_expr(arg)?;
                 }
             }
+            Expr::Get { object, name } => {
+                self.resolve_expr(object)?;
+            }
             Expr::Grouping { expr } => {
                 self.resolve_expr(expr)?;
             }
@@ -195,6 +198,14 @@ impl Resolver {
             } => {
                 self.resolve_expr(left)?;
                 self.resolve_expr(right)?;
+            }
+            Expr::Set {
+                object,
+                name,
+                value,
+            } => {
+                self.resolve_expr(value)?;
+                self.resolve_expr(object)?;
             }
             Expr::Unary { operator, right } => {
                 self.resolve_expr(right)?;

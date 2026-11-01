@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 
 use crate::{
-    environment::EnvRef, runtime_error::RuntimeError,
+    class::LoxClass, environment::EnvRef, runtime_error::RuntimeError,
     runtime_value::RuntimeValue, stmt::Function,
 };
 
@@ -9,6 +9,7 @@ use crate::{
 pub enum LoxCallable {
     NativeFunction(NativeFunction),
     LoxFunction(LoxFunction),
+    LoxClass(LoxClass),
 }
 
 #[derive(Clone, Debug)]
@@ -32,6 +33,7 @@ impl LoxCallable {
         match self {
             LoxCallable::NativeFunction(f) => f.arity,
             LoxCallable::LoxFunction(f) => f.declaration.params.len(),
+            LoxCallable::LoxClass(_) => 0,
         }
     }
 }
@@ -43,6 +45,7 @@ impl Display for LoxCallable {
                 write!(f, "<fn {}>", fun.declaration.name.lexeme)
             }
             LoxCallable::NativeFunction(_) => write!(f, "<native function>"),
+            LoxCallable::LoxClass(c) => write!(f, "<class {}>", c),
         }
     }
 }

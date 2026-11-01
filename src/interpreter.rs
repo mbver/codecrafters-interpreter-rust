@@ -7,8 +7,10 @@ use std::{
 
 use crate::{
     callable::{LoxCallable, LoxFunction, NativeFunction},
+    class::LoxClass,
     environment::{EnvRef, Environment, assign_at, get_at},
     expr::Expr,
+    instance::LoxInstance,
     runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
     stmt::Stmt,
@@ -229,6 +231,32 @@ impl Interpreter {
                 }
                 self.call(callable, arguments)
             }
+            Expr::Get { object, name } => {
+                let object = self.evaluate(object)?;
+                let RuntimeValue::Instance(object) = object else {
+                    return Err(RuntimeError::Error(RealError {
+                        token: name.clone(),
+                        msg: "Only instances have properties.".to_string(),
+                    }));
+                };
+                object.borrow().get(name)
+            }
+            Expr::Set {
+                object,
+                name,
+                value,
+            } => {
+                let object = self.evaluate(object)?;
+                let RuntimeValue::Instance(object) = object else {
+                    return Err(RuntimeError::Error(RealError {
+                        token: name.clone(),
+                        msg: "Only instances have fields.".to_string(),
+                    }));
+                };
+                let value = self.evaluate(value)?;
+                object.borrow_mut().set(name, value.clone());
+                Ok(value)
+            }
             _ => todo!(),
         }
     }
@@ -258,6 +286,10 @@ impl Interpreter {
                 Ok(value)
             }
             LoxCallable::NativeFunction(f) => (f.function)(&arguments),
+            LoxCallable::LoxClass(c) => {
+                let instance = LoxInstance::new(c);
+                Ok(RuntimeValue::Instance(Rc::new(RefCell::new(instance))))
+            }
         }
     }
     fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
@@ -282,6 +314,23 @@ impl Interpreter {
                 let environment =
                     Environment::new_enclosed(self.environment.clone());
                 self.execute_block(stmts, Rc::new(RefCell::new(environment)))
+            }
+            Stmt::Class {
+                name,
+                superclass,
+                methods,
+            } => {
+                // define the class in environment so later the methods' definition
+                // can find where the class is
+                self.environment.borrow_mut().define(
+                    name.lexeme.clone(),
+                    RuntimeValue::Literal(Literal::NULL),
+                );
+                let class = LoxClass::new(name.lexeme.clone());
+                self.environment
+                    .borrow_mut()
+                    .assign_local(name, RuntimeValue::Class(class))?;
+                Ok(())
             }
             Stmt::If {
                 condition,
@@ -364,6 +413,10 @@ pub fn print_value(value: &RuntimeValue) {
             }
             _ => println!("{}", value),
         },
+        RuntimeValue::Class(c) => {
+            println!("{}", c)
+        }
+        RuntimeValue::Instance(a) => println!("{}", a.borrow()),
     }
 }
 

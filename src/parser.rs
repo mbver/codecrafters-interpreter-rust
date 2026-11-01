@@ -268,15 +268,22 @@ impl Parser {
         let Some(equal) = self.match_token(&[TokenType::EQUAL]) else {
             return Ok(expr);
         };
-        let Expr::Variable { name } = expr else {
-            self.error(equal, "Invalid assignment target.");
-            return Err(ParseError);
-        };
         let value = self.assignment()?;
-        Ok(Expr::Assign {
-            name,
-            value: Box::new(value),
-        })
+        match expr {
+            Expr::Variable { name } => Ok(Expr::Assign {
+                name,
+                value: Box::new(value),
+            }),
+            Expr::Get { object, name } => Ok(Expr::Set {
+                object,
+                name,
+                value: Box::new(value),
+            }),
+            _ => {
+                self.error(equal, "Invalid assignment target.");
+                Err(ParseError)
+            }
+        }
     }
     fn or(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.and()?;
@@ -381,8 +388,21 @@ impl Parser {
     fn call(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.primary()?;
         // handle f()()()
-        while self.match_token(&[TokenType::LEFT_PAREN]).is_some() {
-            expr = self.finish_call(expr)?; // parse and consume ')'
+        loop {
+            if self.match_token(&[TokenType::LEFT_PAREN]).is_some() {
+                expr = self.finish_call(expr)?;
+            } else if self.match_token(&[TokenType::DOT]).is_some() {
+                let name = self.consume(
+                    TokenType::IDENTIFIER,
+                    "Expect property after '.'.",
+                )?;
+                expr = Expr::Get {
+                    object: Box::new(expr),
+                    name,
+                };
+            } else {
+                break;
+            }
         }
         Ok(expr)
     }
