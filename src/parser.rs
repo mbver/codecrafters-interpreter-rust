@@ -440,6 +440,7 @@ impl Parser {
             TokenType::NIL,
             TokenType::NUMBER,
             TokenType::STRING,
+            TokenType::THIS,
         ]) {
             match token.token_type {
                 TokenType::FALSE => {
@@ -462,6 +463,7 @@ impl Parser {
                         value: token.literal.clone(),
                     });
                 }
+                TokenType::THIS => return Ok(Expr::This { keyword: token }),
                 _ => unreachable!(),
             }
         }

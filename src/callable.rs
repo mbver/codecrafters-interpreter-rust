@@ -1,8 +1,16 @@
-use std::fmt::{Debug, Display};
+use std::{
+    cell::RefCell,
+    fmt::{Debug, Display},
+    rc::Rc,
+};
 
 use crate::{
-    class::LoxClass, environment::EnvRef, runtime_error::RuntimeError,
-    runtime_value::RuntimeValue, stmt::Function,
+    class::LoxClass,
+    environment::{EnvRef, Environment},
+    instance::LoxInstance,
+    runtime_error::RuntimeError,
+    runtime_value::RuntimeValue,
+    stmt::Function,
 };
 
 #[derive(Clone, Debug)]
@@ -23,6 +31,17 @@ pub struct LoxFunction {
     pub closure: EnvRef,
 }
 
+impl LoxFunction {
+    pub fn bind(self, instance: Rc<RefCell<LoxInstance>>) -> Self {
+        let mut environment = Environment::new_enclosed(self.closure);
+        environment
+            .define("this".to_string(), RuntimeValue::Instance(instance));
+        LoxFunction {
+            declaration: self.declaration,
+            closure: Rc::new(RefCell::new(environment)),
+        }
+    }
+}
 impl Debug for LoxFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "<function: {}>", self.declaration.name.lexeme)

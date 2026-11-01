@@ -106,17 +106,32 @@ impl Resolver {
             } => {
                 self.declare(name)?;
                 self.define(name);
-                for stmt in methods {
-                    let Stmt::Function(Function { name, params, body }) = stmt
-                    else {
-                        return Err(ResolveError {
-                            token: name.clone(),
-                            msg: "Method is not a function statement."
-                                .to_string(),
-                        });
-                    };
-                    self.resolve_function(params, body, FunctionType::METHOD)?;
-                }
+                self.begin_scope();
+                self.scopes
+                    .last_mut()
+                    .unwrap()
+                    .insert("this".to_string(), true);
+                let res = (|| {
+                    for stmt in methods {
+                        let Stmt::Function(Function { name, params, body }) =
+                            stmt
+                        else {
+                            return Err(ResolveError {
+                                token: name.clone(),
+                                msg: "Method is not a function statement."
+                                    .to_string(),
+                            });
+                        };
+                        self.resolve_function(
+                            params,
+                            body,
+                            FunctionType::METHOD,
+                        )?;
+                    }
+                    Ok(())
+                })();
+                self.end_scope();
+                res?;
             }
             Stmt::Variable { name, initializer } => {
                 self.declare(name)?;
@@ -222,6 +237,9 @@ impl Resolver {
             } => {
                 self.resolve_expr(value)?;
                 self.resolve_expr(object)?;
+            }
+            Expr::This { keyword } => {
+                self.resolve_local(keyword);
             }
             Expr::Unary { operator, right } => {
                 self.resolve_expr(right)?;

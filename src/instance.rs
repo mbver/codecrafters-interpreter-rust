@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
 use crate::{
     callable::{LoxCallable, LoxFunction},
@@ -21,11 +21,15 @@ impl LoxInstance {
             fields: HashMap::new(),
         }
     }
-    pub fn get(&self, name: &Token) -> Result<RuntimeValue, RuntimeError> {
-        if let Some(value) = self.fields.get(&name.lexeme) {
+    pub fn get(
+        instance: Rc<RefCell<Self>>,
+        name: &Token,
+    ) -> Result<RuntimeValue, RuntimeError> {
+        let instance_ref = instance.borrow();
+        if let Some(value) = instance_ref.fields.get(&name.lexeme) {
             return Ok(value.clone());
         }
-        if let Some(method) = self.class.find_method(&name.lexeme) {
+        if let Some(method) = instance_ref.class.find_method(&name.lexeme) {
             return Ok(RuntimeValue::Callable(LoxCallable::LoxFunction(
                 method,
             )));

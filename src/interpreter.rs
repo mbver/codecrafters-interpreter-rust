@@ -244,7 +244,7 @@ impl Interpreter {
                         msg: "Only instances have properties.".to_string(),
                     }));
                 };
-                object.borrow().get(name)
+                LoxInstance::get(object, name)
             }
             Expr::Set {
                 object,
@@ -262,6 +262,7 @@ impl Interpreter {
                 object.borrow_mut().set(name, value.clone());
                 Ok(value)
             }
+            Expr::This { keyword } => self.lookup_variable(keyword),
             _ => todo!(),
         }
     }
