@@ -6,14 +6,14 @@ use std::{
 };
 
 use crate::{
-    callable::{self, LoxCallable, LoxFunction, NativeFunction},
+    callable::{LoxCallable, LoxFunction, NativeFunction},
     class::LoxClass,
     environment::{EnvRef, Environment, assign_at, get_at},
     expr::Expr,
     instance::LoxInstance,
     runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,
-    stmt::{Function, Stmt},
+    stmt::Stmt,
     token::{Literal, Token, TokenType},
 };
 
@@ -386,7 +386,6 @@ impl Interpreter {
                 let value = self.evaluate(value)?;
                 Err(RuntimeError::Return(value))
             }
-            _ => todo!(),
         }
     }
     fn execute_block(

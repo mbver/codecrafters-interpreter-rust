@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, fmt::Display, rc::Rc};
 
 use crate::{
-    callable::{LoxCallable, LoxFunction},
+    callable::LoxCallable,
     class::LoxClass,
     runtime_error::{RealError, RuntimeError},
     runtime_value::RuntimeValue,

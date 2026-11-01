@@ -13,10 +13,16 @@ enum FunctionType {
     METHOD,
 }
 
+#[derive(PartialEq)]
+enum ClassType {
+    NONE,
+    CLASS,
+}
 pub struct Resolver {
     locals: HashMap<usize, usize>,
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
+    current_class: ClassType,
 }
 
 #[derive(Debug)]
@@ -30,6 +36,7 @@ impl Resolver {
             locals: HashMap::new(),
             scopes: Vec::new(),
             current_function: FunctionType::NONE,
+            current_class: ClassType::NONE,
         }
     }
     pub fn into_locals(self) -> HashMap<usize, usize> {
@@ -104,6 +111,10 @@ impl Resolver {
                 superclass,
                 methods,
             } => {
+                let enclosing_class = std::mem::replace(
+                    &mut self.current_class,
+                    ClassType::CLASS,
+                );
                 self.declare(name)?;
                 self.define(name);
                 self.begin_scope();
@@ -131,6 +142,7 @@ impl Resolver {
                     Ok(())
                 })();
                 self.end_scope();
+                self.current_class = enclosing_class;
                 res?;
             }
             Stmt::Variable { name, initializer } => {
@@ -175,8 +187,6 @@ impl Resolver {
                 self.resolve_expr(condition)?;
                 self.resolve_stmt(body)?;
             }
-
-            _ => {}
         }
         Ok(())
     }
@@ -239,6 +249,12 @@ impl Resolver {
                 self.resolve_expr(object)?;
             }
             Expr::This { keyword } => {
+                if self.current_class == ClassType::NONE {
+                    return Err(ResolveError {
+                        token: keyword.clone(),
+                        msg: "Can't use 'this outside of a class.".to_string(),
+                    });
+                }
                 self.resolve_local(keyword);
             }
             Expr::Unary { operator, right } => {
