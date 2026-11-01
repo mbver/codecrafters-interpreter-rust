@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    callable::{LoxCallable, LoxFunction, NativeFunction},
+    callable::{self, LoxCallable, LoxFunction, NativeFunction},
     class::LoxClass,
     environment::{EnvRef, Environment, assign_at, get_at},
     expr::Expr,
@@ -209,12 +209,17 @@ impl Interpreter {
                 args,
             } => {
                 let callee = self.evaluate(callee)?;
-                let RuntimeValue::Callable(callable) = callee else {
-                    return Err(RuntimeError::Error(RealError::new(
-                        paren.clone(),
-                        "Can only call functions and classes".to_string(),
-                    )));
+                let callable = match callee {
+                    RuntimeValue::Callable(callable) => callable,
+                    RuntimeValue::Class(class) => LoxCallable::LoxClass(class),
+                    _ => {
+                        return Err(RuntimeError::Error(RealError::new(
+                            paren.clone(),
+                            "Can only call functions and classes".to_string(),
+                        )));
+                    }
                 };
+
                 let mut arguments = Vec::new();
                 for arg in args {
                     arguments.push(self.evaluate(arg)?);
@@ -518,7 +523,24 @@ while (running) {
         assert!(!parser.has_error);
         let mut resolver = Resolver::new();
         let res = resolver.resolve_stmts(&stmts);
-        println!("========== res: {:?}", res);
+        assert!(res.is_ok());
+        let mut interpreter = Interpreter::new(resolver.into_locals());
+        interpreter.interpret(&stmts);
+        assert!(!interpreter.has_error);
+    }
+    #[test]
+    fn instance() {
+        let content = r#"class Spaceship {}
+var falcon = Spaceship();
+print falcon;"#;
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut resolver = Resolver::new();
+        let res = resolver.resolve_stmts(&stmts);
         assert!(res.is_ok());
         let mut interpreter = Interpreter::new(resolver.into_locals());
         interpreter.interpret(&stmts);
