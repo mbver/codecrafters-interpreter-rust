@@ -11,6 +11,7 @@ enum FunctionType {
     NONE,
     FUNCTION,
     METHOD,
+    INITIALIZER,
 }
 
 #[derive(PartialEq)]
@@ -133,11 +134,12 @@ impl Resolver {
                                     .to_string(),
                             });
                         };
-                        self.resolve_function(
-                            params,
-                            body,
-                            FunctionType::METHOD,
-                        )?;
+                        let function_type = if name.lexeme == "init" {
+                            FunctionType::INITIALIZER
+                        } else {
+                            FunctionType::METHOD
+                        };
+                        self.resolve_function(params, body, function_type)?;
                     }
                     Ok(())
                 })();
@@ -175,12 +177,24 @@ impl Resolver {
                 self.resolve_expr(expr)?;
             }
             Stmt::Return { keyword, value } => {
-                if self.current_function == FunctionType::NONE {
-                    return Err(ResolveError {
-                        token: keyword.clone(),
-                        msg: "Can't return from top-level code.".to_string(),
-                    });
+                match self.current_function {
+                    FunctionType::NONE => {
+                        return Err(ResolveError {
+                            token: keyword.clone(),
+                            msg: "Can't return from top-level code."
+                                .to_string(),
+                        });
+                    }
+                    FunctionType::INITIALIZER => {
+                        return Err(ResolveError {
+                            token: keyword.clone(),
+                            msg: "Can't return a value from an initializer."
+                                .to_string(),
+                        });
+                    }
+                    _ => {}
                 }
+
                 self.resolve_expr(value)?;
             }
             Stmt::While { condition, body } => {

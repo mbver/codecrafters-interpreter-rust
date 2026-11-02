@@ -273,7 +273,8 @@ impl Interpreter {
     ) -> Result<RuntimeValue, RuntimeError> {
         match callable {
             LoxCallable::LoxFunction(f) => {
-                let mut environment = Environment::new_enclosed(f.closure);
+                let mut environment =
+                    Environment::new_enclosed(f.closure.clone());
                 for (param, arg) in
                     f.declaration.params.iter().zip(arguments.iter())
                 {
@@ -289,6 +290,16 @@ impl Interpreter {
                         RuntimeError::Return(v) => v,
                     },
                 };
+                if f.is_initializer {
+                    let name = Token::new(
+                        TokenType::IDENTIFIER,
+                        "this".to_string(),
+                        Literal::NULL,
+                        f.declaration.name.line,
+                        f.declaration.name.offset,
+                    );
+                    return get_at(f.closure, 0, &name);
+                }
                 Ok(value)
             }
             LoxCallable::NativeFunction(f) => (f.function)(&arguments),
