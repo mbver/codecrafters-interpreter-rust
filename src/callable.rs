@@ -29,6 +29,7 @@ pub struct NativeFunction {
 pub struct LoxFunction {
     pub declaration: Function,
     pub closure: EnvRef,
+    pub is_initializer: bool,
 }
 
 impl LoxFunction {
@@ -39,6 +40,7 @@ impl LoxFunction {
         LoxFunction {
             declaration: self.declaration,
             closure: Rc::new(RefCell::new(environment)),
+            is_initializer: self.is_initializer,
         }
     }
 }
@@ -52,7 +54,12 @@ impl LoxCallable {
         match self {
             LoxCallable::NativeFunction(f) => f.arity,
             LoxCallable::LoxFunction(f) => f.declaration.params.len(),
-            LoxCallable::LoxClass(_) => 0,
+            LoxCallable::LoxClass(c) => {
+                let Some(initializer) = c.find_method("init") else {
+                    return 0;
+                };
+                initializer.declaration.params.len()
+            }
         }
     }
 }

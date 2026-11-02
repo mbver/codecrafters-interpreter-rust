@@ -293,8 +293,14 @@ impl Interpreter {
             }
             LoxCallable::NativeFunction(f) => (f.function)(&arguments),
             LoxCallable::LoxClass(c) => {
-                let instance = LoxInstance::new(c);
-                Ok(RuntimeValue::Instance(Rc::new(RefCell::new(instance))))
+                let initializer = c.find_method("init");
+                let instance = Rc::new(RefCell::new(LoxInstance::new(c)));
+                if let Some(initializer) = initializer {
+                    let initializer = initializer.bind(instance.clone());
+                    let callable = LoxCallable::LoxFunction(initializer);
+                    self.call(callable, arguments)?;
+                }
+                Ok(RuntimeValue::Instance(instance))
             }
         }
     }
@@ -344,6 +350,7 @@ impl Interpreter {
                     let function = LoxFunction {
                         declaration: f.clone(),
                         closure: self.environment.clone(),
+                        is_initializer: f.name.lexeme == "init",
                     };
                     method_map.insert(f.name.lexeme.clone(), function);
                 }
@@ -377,6 +384,7 @@ impl Interpreter {
                         LoxFunction {
                             declaration: f.clone(),
                             closure: self.environment.clone(),
+                            is_initializer: false,
                         },
                     )),
                 );
