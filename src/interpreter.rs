@@ -391,7 +391,6 @@ impl Interpreter {
                 superclass,
                 methods,
             } => {
-                let has_superclass = superclass.is_some();
                 let superclass = match superclass {
                     Some(superclass) => {
                         let superclass = self.evaluate(superclass)?;
@@ -411,6 +410,7 @@ impl Interpreter {
                     name.lexeme.clone(),
                     RuntimeValue::Literal(Literal::NULL),
                 );
+                let enclosing = self.environment.clone();
                 if let Some(superclass) = &superclass {
                     self.environment = Rc::new(RefCell::new(
                         Environment::new_enclosed(self.environment.clone()),
@@ -441,18 +441,11 @@ impl Interpreter {
                     superclass.map(Box::new),
                     method_map,
                 );
-                if has_superclass {
-                    assign_at(
-                        self.environment.clone(),
-                        1,
-                        name,
-                        RuntimeValue::Class(class),
-                    )?;
-                } else {
-                    self.environment
-                        .borrow_mut()
-                        .assign_local(name, RuntimeValue::Class(class))?;
-                }
+                self.environment = enclosing;
+
+                self.environment
+                    .borrow_mut()
+                    .assign_local(name, RuntimeValue::Class(class))?;
                 Ok(())
             }
             Stmt::If {
@@ -713,6 +706,47 @@ class BostonCream < Doughnut {
     }
 }
 BostonCream().cook();"#;
+
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut resolver = Resolver::new();
+        let res = resolver.resolve_stmts(&stmts);
+        assert!(res.is_ok());
+        let mut interpreter = Interpreter::new(resolver.into_locals());
+        interpreter.interpret(&stmts);
+        assert!(!interpreter.has_error);
+    }
+    #[test]
+    fn test_super_2() {
+        let content = r#"
+class A {
+  say() {
+    print "A";
+  }
+}
+
+class B < A {
+  test() {
+    super.say();
+  }
+  say() {
+    print "B";
+  }
+}
+class C < B {
+  say() {
+    print "C";
+  }
+}
+B().say();
+B().test();
+C().say();
+C().test(); // expect: A
+"#;
 
         let mut scanner = Scanner::new(content);
         scanner.scan_tokens();
