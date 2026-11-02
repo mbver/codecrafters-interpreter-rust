@@ -18,6 +18,7 @@ enum FunctionType {
 enum ClassType {
     NONE,
     CLASS,
+    SUBCLASS,
 }
 pub struct Resolver {
     locals: HashMap<usize, usize>,
@@ -131,6 +132,7 @@ impl Resolver {
                             });
                         }
                     }
+                    self.current_class = ClassType::SUBCLASS;
                     self.resolve_expr(superclass)?;
                     self.begin_scope();
                     self.scopes
@@ -290,6 +292,19 @@ impl Resolver {
                 self.resolve_expr(object)?;
             }
             Expr::Super { keyword, method } => {
+                match self.current_class {
+                    ClassType::NONE => {
+                        return Err(ResolveError {
+                            token: keyword.clone(),
+                            msg: "Can't use 'super' outside of a class."
+                                .to_string(),
+                        });
+                    }
+                    ClassType::CLASS => {
+                        return Err(ResolveError { token: keyword.clone(), msg: "Can't use 'super' in a class with no superclass.".to_string() });
+                    }
+                    _ => {}
+                }
                 self.resolve_local(keyword);
             }
             Expr::This { keyword } => {
