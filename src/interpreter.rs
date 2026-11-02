@@ -391,6 +391,7 @@ impl Interpreter {
                 superclass,
                 methods,
             } => {
+                let has_superclass = superclass.is_some();
                 let superclass = match superclass {
                     Some(superclass) => {
                         let superclass = self.evaluate(superclass)?;
@@ -440,9 +441,18 @@ impl Interpreter {
                     superclass.map(Box::new),
                     method_map,
                 );
-                self.environment
-                    .borrow_mut()
-                    .assign_local(name, RuntimeValue::Class(class))?;
+                if has_superclass {
+                    assign_at(
+                        self.environment.clone(),
+                        1,
+                        name,
+                        RuntimeValue::Class(class),
+                    )?;
+                } else {
+                    self.environment
+                        .borrow_mut()
+                        .assign_local(name, RuntimeValue::Class(class))?;
+                }
                 Ok(())
             }
             Stmt::If {
@@ -674,6 +684,35 @@ class Counter {
 var instance = Counter(-19);
 print instance.count;
 print instance.init(19).count;"#;
+
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut resolver = Resolver::new();
+        let res = resolver.resolve_stmts(&stmts);
+        assert!(res.is_ok());
+        let mut interpreter = Interpreter::new(resolver.into_locals());
+        interpreter.interpret(&stmts);
+        assert!(!interpreter.has_error);
+    }
+
+    #[test]
+    fn test_super() {
+        let content = r#"
+class Doughnut {
+    cook() {
+    print "Fry until golden brown.";
+    }
+}
+class BostonCream < Doughnut {
+    cook() {
+    super.cook();
+    }
+}
+BostonCream().cook();"#;
 
         let mut scanner = Scanner::new(content);
         scanner.scan_tokens();
