@@ -263,7 +263,53 @@ impl Interpreter {
                 Ok(value)
             }
             Expr::This { keyword } => self.lookup_variable(keyword),
-            _ => todo!(),
+            Expr::Super {
+                keyword,
+                method: method_name,
+            } => {
+                let Some(distance) = self.locals.get(&keyword.offset) else {
+                    return Err(RuntimeError::Error(RealError {
+                        token: keyword.clone(),
+                        msg: "Superclass does not exist.".to_string(),
+                    }));
+                };
+                let superclass =
+                    get_at(Rc::clone(&self.environment), *distance, keyword)?;
+                let RuntimeValue::Class(superclass) = superclass else {
+                    return Err(RuntimeError::Error(RealError {
+                        token: keyword.clone(),
+                        msg: "Superclass must be a class.".to_string(),
+                    }));
+                };
+                let this = Token::new(
+                    TokenType::THIS,
+                    "this".to_string(),
+                    Literal::NULL,
+                    0,
+                    0,
+                ); // TODO: this is temporary. how to use the real "this"
+                let instance =
+                    get_at(Rc::clone(&self.environment), distance - 1, &this)?;
+                let RuntimeValue::Instance(instance) = instance else {
+                    return Err(RuntimeError::Error(RealError {
+                        token: keyword.clone(),
+                        msg: "This must be an instance".to_string(),
+                    }));
+                };
+                let method = superclass.find_method(&method_name.lexeme);
+                let Some(method) = method else {
+                    return Err(RuntimeError::Error(RealError {
+                        token: method_name.clone(),
+                        msg: format!(
+                            "Undefined property '{}'.",
+                            method_name.lexeme
+                        ),
+                    }));
+                };
+                Ok(RuntimeValue::Callable(LoxCallable::LoxFunction(
+                    method.bind(instance),
+                )))
+            }
         }
     }
     fn call(
@@ -354,7 +400,7 @@ impl Interpreter {
                                 msg: "Superclass must be a class.".to_string(),
                             }));
                         };
-                        Some(Box::new(superclass))
+                        Some(superclass)
                     }
                     None => None,
                 };
@@ -364,6 +410,15 @@ impl Interpreter {
                     name.lexeme.clone(),
                     RuntimeValue::Literal(Literal::NULL),
                 );
+                if let Some(superclass) = &superclass {
+                    self.environment = Rc::new(RefCell::new(
+                        Environment::new_enclosed(self.environment.clone()),
+                    ));
+                    self.environment.borrow_mut().define(
+                        "super".to_string(),
+                        RuntimeValue::Class(superclass.clone()),
+                    );
+                }
                 let mut method_map = HashMap::new();
                 for method in methods {
                     let Stmt::Function(f) = method else {
@@ -380,8 +435,11 @@ impl Interpreter {
                     };
                     method_map.insert(f.name.lexeme.clone(), function);
                 }
-                let class =
-                    LoxClass::new(name.lexeme.clone(), superclass, method_map);
+                let class = LoxClass::new(
+                    name.lexeme.clone(),
+                    superclass.map(Box::new),
+                    method_map,
+                );
                 self.environment
                     .borrow_mut()
                     .assign_local(name, RuntimeValue::Class(class))?;

@@ -132,6 +132,11 @@ impl Resolver {
                         }
                     }
                     self.resolve_expr(superclass)?;
+                    self.begin_scope();
+                    self.scopes
+                        .last_mut()
+                        .unwrap()
+                        .insert("super".to_string(), true);
                 }
                 self.begin_scope();
                 self.scopes
@@ -159,6 +164,9 @@ impl Resolver {
                     Ok(())
                 })();
                 self.end_scope();
+                if superclass.is_some() {
+                    self.end_scope();
+                }
                 self.current_class = enclosing_class;
                 res?;
             }
@@ -281,6 +289,9 @@ impl Resolver {
                 self.resolve_expr(value)?;
                 self.resolve_expr(object)?;
             }
+            Expr::Super { keyword, method } => {
+                self.resolve_local(keyword);
+            }
             Expr::This { keyword } => {
                 if self.current_class == ClassType::NONE {
                     return Err(ResolveError {
@@ -306,7 +317,6 @@ impl Resolver {
                 }
                 self.resolve_local(name);
             }
-            _ => todo!(),
         }
         Ok(())
     }

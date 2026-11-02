@@ -477,6 +477,14 @@ impl Parser {
                 _ => unreachable!(),
             }
         }
+        if let Some(keyword) = self.match_token(&[TokenType::SUPER]) {
+            self.consume(TokenType::DOT, "Expect '.' after 'super'.")?;
+            let method = self.consume(
+                TokenType::IDENTIFIER,
+                "Expect superclass method name.",
+            )?;
+            return Ok(Expr::Super { keyword, method });
+        }
         if let Some(name) = self.match_token(&[TokenType::IDENTIFIER]) {
             return Ok(Expr::Variable { name });
         }
