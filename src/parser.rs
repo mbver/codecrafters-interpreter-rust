@@ -194,11 +194,9 @@ impl Parser {
     fn return_statement(&mut self) -> Result<Stmt, ParseError> {
         let keyword = self.previous().clone();
         let value = if self.check(TokenType::SEMICOLON) {
-            Expr::Literal {
-                value: Literal::NULL,
-            }
+            None
         } else {
-            self.expression()?
+            Some(self.expression()?)
         };
         self.consume(TokenType::SEMICOLON, "Expect ';' after return value.")?;
         Ok(Stmt::Return { keyword, value })

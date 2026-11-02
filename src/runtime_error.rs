@@ -2,7 +2,7 @@ use crate::{runtime_value::RuntimeValue, token::Token};
 
 pub enum RuntimeError {
     Error(RealError),
-    Return(RuntimeValue),
+    Return(Option<RuntimeValue>),
 }
 
 pub struct RealError {

@@ -186,16 +186,20 @@ impl Resolver {
                         });
                     }
                     FunctionType::INITIALIZER => {
-                        return Err(ResolveError {
-                            token: keyword.clone(),
-                            msg: "Can't return a value from an initializer."
-                                .to_string(),
-                        });
+                        if value.is_some() {
+                            return Err(ResolveError {
+                                token: keyword.clone(),
+                                msg:
+                                    "Can't return a value from an initializer."
+                                        .to_string(),
+                            });
+                        }
                     }
                     _ => {}
                 }
-
-                self.resolve_expr(value)?;
+                if let Some(value) = value {
+                    self.resolve_expr(value)?;
+                }
             }
             Stmt::While { condition, body } => {
                 self.resolve_expr(condition)?;

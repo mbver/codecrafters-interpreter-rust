@@ -287,19 +287,21 @@ impl Interpreter {
                     Ok(_) => RuntimeValue::Literal(Literal::NULL),
                     Err(e) => match e {
                         RuntimeError::Error(_) => return Err(e),
-                        RuntimeError::Return(v) => v,
+                        RuntimeError::Return(v) => {
+                            if f.is_initializer {
+                                let name = Token::new(
+                                    TokenType::IDENTIFIER,
+                                    "this".to_string(),
+                                    Literal::NULL,
+                                    f.declaration.name.line,
+                                    f.declaration.name.offset,
+                                );
+                                return get_at(f.closure, 0, &name);
+                            }
+                            v.unwrap_or(RuntimeValue::Literal(Literal::NULL))
+                        }
                     },
                 };
-                if f.is_initializer {
-                    let name = Token::new(
-                        TokenType::IDENTIFIER,
-                        "this".to_string(),
-                        Literal::NULL,
-                        f.declaration.name.line,
-                        f.declaration.name.offset,
-                    );
-                    return get_at(f.closure, 0, &name);
-                }
                 Ok(value)
             }
             LoxCallable::NativeFunction(f) => (f.function)(&arguments),
@@ -402,7 +404,10 @@ impl Interpreter {
                 Ok(())
             }
             Stmt::Return { keyword, value } => {
-                let value = self.evaluate(value)?;
+                let value = match value {
+                    Some(value) => Some(self.evaluate(value)?),
+                    None => None,
+                };
                 Err(RuntimeError::Return(value))
             }
         }
