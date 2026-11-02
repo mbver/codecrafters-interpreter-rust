@@ -345,6 +345,19 @@ impl Interpreter {
                 superclass,
                 methods,
             } => {
+                let superclass = match superclass {
+                    Some(superclass) => {
+                        let superclass = self.evaluate(superclass)?;
+                        let RuntimeValue::Class(superclass) = superclass else {
+                            return Err(RuntimeError::Error(RealError {
+                                token: name.clone(),
+                                msg: "Superclass must be a class.".to_string(),
+                            }));
+                        };
+                        Some(Box::new(superclass))
+                    }
+                    None => None,
+                };
                 // define the class in environment so later the methods' definition
                 // can find where the class is
                 self.environment.borrow_mut().define(
@@ -367,7 +380,8 @@ impl Interpreter {
                     };
                     method_map.insert(f.name.lexeme.clone(), function);
                 }
-                let class = LoxClass::new(name.lexeme.clone(), method_map);
+                let class =
+                    LoxClass::new(name.lexeme.clone(), superclass, method_map);
                 self.environment
                     .borrow_mut()
                     .assign_local(name, RuntimeValue::Class(class))?;

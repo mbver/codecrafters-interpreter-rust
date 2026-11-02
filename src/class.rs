@@ -5,6 +5,7 @@ use crate::callable::LoxFunction;
 #[derive(Clone, Debug)]
 pub struct LoxClass {
     pub name: String,
+    pub superclass: Option<Box<LoxClass>>,
     pub methods: HashMap<String, LoxFunction>,
 }
 
@@ -15,10 +16,22 @@ impl Display for LoxClass {
 }
 
 impl LoxClass {
-    pub fn new(name: String, methods: HashMap<String, LoxFunction>) -> Self {
-        Self { name, methods }
+    pub fn new(
+        name: String,
+        superclass: Option<Box<LoxClass>>,
+        methods: HashMap<String, LoxFunction>,
+    ) -> Self {
+        Self {
+            name,
+            superclass,
+            methods,
+        }
     }
     pub fn find_method(&self, name: &str) -> Option<LoxFunction> {
-        self.methods.get(name).cloned()
+        self.methods.get(name).cloned().or_else(|| {
+            self.superclass
+                .as_ref()
+                .and_then(|superclass| superclass.find_method(name))
+        })
     }
 }

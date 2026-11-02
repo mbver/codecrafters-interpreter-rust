@@ -118,6 +118,21 @@ impl Resolver {
                 );
                 self.declare(name)?;
                 self.define(name);
+                if let Some(superclass) = superclass {
+                    if let Expr::Variable {
+                        name: superclass_name,
+                    } = superclass
+                    {
+                        if name.lexeme == superclass_name.lexeme {
+                            return Err(ResolveError {
+                                token: superclass_name.clone(),
+                                msg: "A class can't inherit from itself."
+                                    .to_string(),
+                            });
+                        }
+                    }
+                    self.resolve_expr(superclass)?;
+                }
                 self.begin_scope();
                 self.scopes
                     .last_mut()
