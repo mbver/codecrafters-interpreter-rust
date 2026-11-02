@@ -288,20 +288,20 @@ impl Interpreter {
                     Err(e) => match e {
                         RuntimeError::Error(_) => return Err(e),
                         RuntimeError::Return(v) => {
-                            if f.is_initializer {
-                                let name = Token::new(
-                                    TokenType::IDENTIFIER,
-                                    "this".to_string(),
-                                    Literal::NULL,
-                                    f.declaration.name.line,
-                                    f.declaration.name.offset,
-                                );
-                                return get_at(f.closure, 0, &name);
-                            }
                             v.unwrap_or(RuntimeValue::Literal(Literal::NULL))
                         }
                     },
                 };
+                if f.is_initializer {
+                    let name = Token::new(
+                        TokenType::IDENTIFIER,
+                        "this".to_string(),
+                        Literal::NULL,
+                        f.declaration.name.line,
+                        f.declaration.name.offset,
+                    );
+                    return get_at(f.closure, 0, &name);
+                }
                 Ok(value)
             }
             LoxCallable::NativeFunction(f) => (f.function)(&arguments),
@@ -572,6 +572,37 @@ while (running) {
         let content = r#"class Spaceship {}
 var falcon = Spaceship();
 print falcon;"#;
+        let mut scanner = Scanner::new(content);
+        scanner.scan_tokens();
+        assert!(!scanner.has_error());
+        let mut parser = Parser::new(scanner.get_tokens());
+        let stmts = parser.parse();
+        assert!(!parser.has_error);
+        let mut resolver = Resolver::new();
+        let res = resolver.resolve_stmts(&stmts);
+        assert!(res.is_ok());
+        let mut interpreter = Interpreter::new(resolver.into_locals());
+        interpreter.interpret(&stmts);
+        assert!(!interpreter.has_error);
+    }
+
+    #[test]
+    fn return_in_init() {
+        let content = r#"
+class Counter {
+    init(startValue) {
+        if (startValue < 0) {
+            print "startValue can't be negative";
+            this.count = 0;
+        } else {
+            this.count = startValue;
+        }
+    }
+}
+var instance = Counter(-19);
+print instance.count;
+print instance.init(19).count;"#;
+
         let mut scanner = Scanner::new(content);
         scanner.scan_tokens();
         assert!(!scanner.has_error());
